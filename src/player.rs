@@ -118,32 +118,30 @@ pub fn user_input_system(
     }
     if runstate.gamestate.is(GameState::Game) {
         let player = runstate.player.unwrap();
-        let mut rotation = 0;
-        let mut thrust = 0;
-        if input.pressed(KeyCode::W) || input.pressed(KeyCode::Up) {
-            thrust += 1
-        }
-        if input.pressed(KeyCode::A) || input.pressed(KeyCode::Left) {
-            rotation += 1
-        }
-        if input.pressed(KeyCode::D) || input.pressed(KeyCode::Right) {
-            rotation -= 1
-        }
-        if rotation != 0 || thrust != 0 {
-            if let Ok((body_handle, ship)) = query.get_mut(player) {
-                let mut body = bodies.get_mut(body_handle.handle()).unwrap();
-                if rotation != 0 {
-                    let rotation = rotation as f32 * ship.rotation_speed;
-                    body.wake_up(true);
-                    body.apply_torque_impulse(rotation);
-                }
-                if thrust != 0 {
-                    let force = body.position.rotation.transform_vector(&Vector2::y())
-                        * thrust as f32
-                        * ship.thrust;
-                    body.wake_up(true);
-                    body.apply_force(force);
-                }
+        let thrust = if input.pressed(KeyCode::W) || input.pressed(KeyCode::Up) {
+            1
+        } else { 0 };
+        let rotation = if input.pressed(KeyCode::A) || input.pressed(KeyCode::Left) {
+            1
+        } else if input.pressed(KeyCode::D) || input.pressed(KeyCode::Right) {
+            -1
+        } else {
+            0
+        };
+        
+        if let Ok((body_handle, ship)) = query.get_mut(player) {
+            let mut body = bodies.get_mut(body_handle.handle()).unwrap();
+            let rotation = rotation as f32 * ship.rotation_speed;
+            if rotation != body.angvel {
+                body.wake_up(true);
+                body.angvel = rotation;
+            }
+            if thrust != 0 {
+                let force = body.position.rotation.transform_vector(&Vector2::y())
+                    * thrust as f32
+                    * ship.thrust;
+                body.wake_up(true);
+                body.apply_force(force);
             }
         }
         if input.pressed(KeyCode::Space) {

@@ -39,7 +39,7 @@ pub fn spawn_laser(
             ..Default::default()
         })
         .with(Laser {
-            despawn_timer: Timer::from_seconds(2.0, false),
+            despawn_timer: Timer::from_seconds(5.0, false),
         })
         .with(body)
         .with(collider)
