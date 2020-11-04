@@ -1,10 +1,6 @@
 use bevy::app::AppExit;
-
-use super::components::*;
-use super::laser::*;
-use super::state::*;
-use super::START_LIFE;
 use bevy::prelude::*;
+use bevy::prelude::KeyCode;
 use bevy_rapier2d::{
     na::Vector2,
     physics::{RapierConfiguration, RigidBodyHandleComponent},
@@ -14,6 +10,11 @@ use bevy_rapier2d::{
         //        math::Point,
     },
 };
+use super::components::*;
+use super::laser::*;
+use super::state::*;
+use super::START_LIFE;
+
 
 pub fn spawn_player(
     mut commands: Commands,
@@ -41,8 +42,8 @@ pub fn spawn_player(
             ..Default::default()
         })
         .with(Ship {
-            rotation_speed: 0.3,
-            thrust: 60.0,
+            rotation_speed: std::f32::consts::TAU,
+            thrust: 160.0,
             life: START_LIFE,
             cannon_timer: Timer::from_seconds(0.2, false),
         })
@@ -86,8 +87,8 @@ pub fn player_dampening_system(
         if let Ok(body_handle) = query.get(runstate.player.unwrap()) {
             let elapsed = time.delta_seconds;
             let mut body = bodies.get_mut(body_handle.handle()).unwrap();
-            body.angvel = body.angvel * 0.1f32.powf(elapsed);
-            body.linvel = body.linvel * 0.8f32.powf(elapsed);
+            body.angvel = body.angvel * 0.001f32.powf(elapsed);
+            body.linvel = body.linvel * 0.01f32.powf(elapsed);
         }
     }
 }
@@ -119,13 +120,13 @@ pub fn user_input_system(
         let player = runstate.player.unwrap();
         let mut rotation = 0;
         let mut thrust = 0;
-        if input.pressed(KeyCode::W) {
+        if input.pressed(KeyCode::W) || input.pressed(KeyCode::Up) {
             thrust += 1
         }
-        if input.pressed(KeyCode::A) {
+        if input.pressed(KeyCode::A) || input.pressed(KeyCode::Left) {
             rotation += 1
         }
-        if input.pressed(KeyCode::D) {
+        if input.pressed(KeyCode::D) || input.pressed(KeyCode::Right) {
             rotation -= 1
         }
         if rotation != 0 || thrust != 0 {

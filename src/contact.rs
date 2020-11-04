@@ -6,12 +6,13 @@ use bevy_rapier2d::{
         geometry::{ContactEvent, Proximity},
     },
 };
-
+use rand::{thread_rng, Rng};
 use super::arena::*;
 use super::bobox::BodyHandleToEntity;
 use super::components::*;
 use super::state::*;
-use rand::{thread_rng, Rng};
+
+
 enum Contacts {
     ShipAsteroid(Entity, Entity),
     LaserAsteroid(Entity, Entity),

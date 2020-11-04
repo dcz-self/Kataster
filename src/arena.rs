@@ -7,13 +7,14 @@ use bevy_rapier2d::{
     rapier::{
         dynamics::{RigidBodyBuilder, RigidBodySet},
         geometry::ColliderBuilder,
+        math::Vector,
         //        math::Point,
     },
 };
 use rand::{thread_rng, Rng};
 
-pub const WINDOW_WIDTH: u32 = 1280;
-pub const WINDOW_HEIGHT: u32 = 800;
+pub const WINDOW_WIDTH: u32 = 720;
+pub const WINDOW_HEIGHT: u32 = 720;
 pub const CAMERA_SCALE: f32 = 0.1;
 pub const ARENA_WIDTH: f32 = WINDOW_WIDTH as f32 * CAMERA_SCALE;
 pub const ARENA_HEIGHT: f32 = WINDOW_HEIGHT as f32 * CAMERA_SCALE;
@@ -65,9 +66,7 @@ pub fn spawn_asteroid_system(
             AsteroidSize::Small => 2.8 / 2.0,
         };
         let body = RigidBodyBuilder::new_dynamic()
-            .translation(event.x, event.y)
-            .linvel(event.vx, event.vy)
-            .angvel(event.angvel);
+            .translation(event.x, event.y);
         let collider = ColliderBuilder::ball(radius).friction(-0.3);
         commands
             .spawn(SpriteComponents {
@@ -142,28 +141,35 @@ pub fn position_system(
             let mut body = bodies.get_mut(body_handle.handle()).unwrap();
             let mut x = body.position.translation.vector.x;
             let mut y = body.position.translation.vector.y;
+            let mut xvel = body.linvel.x;
+            let mut yvel = body.linvel.y;
             let mut updated = false;
-            // Wrap around screen edges
+            // Stop at screen edges
             let half_width = ARENA_WIDTH / 2.0;
             let half_height = ARENA_HEIGHT / 2.0;
-            if x < -half_width && body.linvel.x < 0.0 {
-                x = half_width;
-                updated = true;
-            } else if x > half_width && body.linvel.x > 0.0 {
+            if x < -half_width && xvel < 0.0 {
                 x = -half_width;
+                xvel = 0.0;
+                updated = true;
+            } else if x > half_width && xvel > 0.0 {
+                x = half_width;
+                xvel = 0.0;
                 updated = true;
             }
-            if y < -half_height && body.linvel.y < 0.0 {
-                y = half_height;
-                updated = true;
-            } else if y > half_height && body.linvel.y > 0.0 {
+            if y < -half_height && yvel < 0.0 {
                 y = -half_height;
                 updated = true;
+                yvel = 0.0;
+            } else if y > half_height && yvel > 0.0 {
+                y = half_height;
+                updated = true;
+                yvel = 0.0;
             }
             if updated {
                 let mut new_position = body.position.clone();
                 new_position.translation.vector.x = x;
                 new_position.translation.vector.y = y;
+                body.linvel = Vector::new(xvel, yvel);
                 body.set_position(new_position);
             }
         }
