@@ -109,9 +109,6 @@ pub fn contact_system(
                                     size,
                                     x,
                                     y,
-                                    vx,
-                                    vy,
-                                    angvel: asteroid_body.angvel,
                                 });
                             }
                         }

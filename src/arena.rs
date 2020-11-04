@@ -99,33 +99,20 @@ pub fn arena_spawn(
         if arena.asteroid_spawn_timer.finished {
             let n_asteroid = asteroids.iter().count();
             arena.asteroid_spawn_timer.reset();
-            if n_asteroid < 20 {
+            if n_asteroid < 1 {
                 arena.asteroid_spawn_timer.duration =
                     (0.8 * arena.asteroid_spawn_timer.duration).max(0.1);
                 let mut rng = thread_rng();
-                // 0: Top , 1:Left
-                let side = rng.gen_range(0, 2);
-                let (x, y) = match side {
-                    0 => (
-                        rng.gen_range(-ARENA_WIDTH / 2.0, ARENA_WIDTH / 2.0),
-                        ARENA_HEIGHT / 2.0,
-                    ),
-                    _ => (
-                        -ARENA_WIDTH / 2.0,
-                        rng.gen_range(-ARENA_HEIGHT / 2.0, ARENA_HEIGHT / 2.0),
-                    ),
-                };
-                let vx = rng.gen_range(-ARENA_WIDTH / 4.0, ARENA_WIDTH / 4.0);
-                let vy = rng.gen_range(-ARENA_HEIGHT / 4.0, ARENA_HEIGHT / 4.0);
-                let angvel = rng.gen_range(-10.0, 10.0);
-                asteroid_spawn_events.send(AsteroidSpawnEvent {
-                    size: AsteroidSize::Big,
-                    x,
-                    y,
-                    vx,
-                    vy,
-                    angvel,
-                });
+                
+                let x: f32 = rng.gen_range(-0.5, 0.5);
+                let y: f32 = rng.gen_range(-0.5, 0.5);
+                if x.abs() > 0.25 || y.abs() > 0.25 {
+                    asteroid_spawn_events.send(AsteroidSpawnEvent {
+                        size: AsteroidSize::Small,
+                        x: x * ARENA_WIDTH,
+                        y: y * ARENA_HEIGHT,
+                    });
+                }
             }
         }
     }
