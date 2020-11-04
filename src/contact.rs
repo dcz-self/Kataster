@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use bevy_contrib_bobox::BodyHandleToEntity;
 use bevy_rapier2d::{
     physics::{EventQueue, RigidBodyHandleComponent},
     rapier::{
@@ -9,6 +8,7 @@ use bevy_rapier2d::{
 };
 
 use super::arena::*;
+use super::bobox::BodyHandleToEntity;
 use super::components::*;
 use super::state::*;
 use rand::{thread_rng, Rng};

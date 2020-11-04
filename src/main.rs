@@ -1,9 +1,10 @@
 use bevy::prelude::*;
-use bevy_contrib_bobox::RapierUtilsPlugin;
+use bevy_rapier2d::na::Vector2;
 use bevy_rapier2d::physics::RapierConfiguration;
 use bevy_rapier2d::physics::RapierPhysicsPlugin;
 
 mod arena;
+mod bobox;
 mod components;
 mod contact;
 mod explosion;
@@ -13,7 +14,7 @@ mod state;
 mod ui;
 
 use arena::*;
-use bevy_rapier2d::na::Vector2;
+use bobox::RapierUtilsPlugin;
 use components::*;
 use contact::*;
 use explosion::*;

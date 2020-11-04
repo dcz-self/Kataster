@@ -240,15 +240,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "bevy_contrib_bobox"
-version = "0.1.0"
-source = "git+https://github.com/Bobox214/bevy_contrib_bobox#8fa7ade3c35d91712efbec633543ffee0e0bcde1"
-dependencies = [
- "bevy",
- "bevy_rapier2d",
-]
-
-[[package]]
 name = "bevy_core"
 version = "0.2.1"
 source = "git+https://github.com/bevyengine/bevy#9db8ae7a16d234414ea1f4ce127dbbdf111759c9"
@@ -1817,7 +1808,6 @@ name = "kataster"
 version = "0.1.0"
 dependencies = [
  "bevy",
- "bevy_contrib_bobox",
  "bevy_rapier2d",
  "rand",
 ]
