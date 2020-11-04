@@ -9,6 +9,7 @@ mod components;
 mod contact;
 mod explosion;
 mod laser;
+mod mob;
 mod player;
 mod state;
 mod ui;
@@ -50,6 +51,7 @@ fn main() {
         .add_system(hold_player.system())
         .add_system(user_input_system.system())
 //        .add_system(player_dampening_system.system())
+        .add_system(mob::expire.system())
         .add_system(ship_cannon_system.system())
         .add_system(despawn_laser_system.system())
         .add_system(handle_explosion.system())

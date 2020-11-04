@@ -77,7 +77,10 @@ pub fn spawn_asteroid_system(
                 material: materials.add(texture_handle.into()),
                 ..Default::default()
             })
-            .with(Asteroid { size: event.size })
+            .with(Asteroid {
+                size: event.size,
+                lifeforce: Timer::from_seconds(10.0, false),
+            })
             .with(Damage { value: 1 })
             .with(body)
             .with(collider)

@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::prelude::Timer;
 
 pub struct Ship {
     /// Ship rotation speed in rad/s
@@ -39,9 +39,13 @@ pub enum AsteroidSize {
     Medium,
     Small,
 }
-pub struct Asteroid {
+pub struct Mob {
     pub size: AsteroidSize,
+    /// Despawn when expired
+    pub lifeforce: Timer,
 }
+pub type Asteroid = Mob;
+
 pub struct Laser {
     pub despawn_timer: Timer,
 }
