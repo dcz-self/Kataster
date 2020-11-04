@@ -118,13 +118,13 @@ pub fn arena_spawn(
     }
 }
 
-pub fn position_system(
+pub fn hold_player(
     runstate: Res<RunState>,
     mut bodies: ResMut<RigidBodySet>,
     query: Query<&RigidBodyHandleComponent>,
 ) {
     if runstate.gamestate.is(GameState::Game) {
-        for body_handle in &mut query.iter() {
+        if let Ok(body_handle) = query.get(runstate.player.unwrap()) {
             let mut body = bodies.get_mut(body_handle.handle()).unwrap();
             let mut x = body.position.translation.vector.x;
             let mut y = body.position.translation.vector.y;
