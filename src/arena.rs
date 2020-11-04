@@ -69,7 +69,7 @@ pub fn spawn_asteroid_system(
         };
         let body = RigidBodyBuilder::new_dynamic()
             .translation(event.x, event.y)
-            .linvel(5.0, 0.0);
+            .linvel(0.0, 0.0);
         let collider = ColliderBuilder::ball(radius).friction(-0.3);
         commands
             .spawn(SpriteComponents {
@@ -108,7 +108,7 @@ pub fn arena_spawn(
         if arena.asteroid_spawn_timer.finished {
             let n_asteroid = asteroids.iter().count();
             arena.asteroid_spawn_timer.reset();
-            if n_asteroid < 1 {
+            if n_asteroid < 3 {
                 arena.asteroid_spawn_timer.duration =
                     (0.8 * arena.asteroid_spawn_timer.duration).max(0.1);
                 let mut rng = thread_rng();
