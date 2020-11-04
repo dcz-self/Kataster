@@ -1,6 +1,8 @@
 use bevy::prelude::Timer;
+use super::mob;
 
-pub struct Ship {
+
+pub struct Borg {
     /// Ship rotation speed in rad/s
     pub rotation_speed: f32,
     /// Max movement speed
@@ -10,6 +12,8 @@ pub struct Ship {
     /// Cannon auto-fire timer
     pub cannon_timer: Timer,
 }
+pub type Ship = Borg;
+
 
 pub struct UiScore {}
 pub struct UiLife {
@@ -31,6 +35,7 @@ pub struct AsteroidSpawnEvent {
     pub size: AsteroidSize,
     pub x: f32,
     pub y: f32,
+    pub brain: mob::Brain,
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
@@ -43,6 +48,11 @@ pub struct Mob {
     pub size: AsteroidSize,
     /// Despawn when expired
     pub lifeforce: Timer,
+    pub brain: mob::Brain,
+    /// Max rotation speed in rad/s
+    pub rotation_speed: f32,
+    /// Max movement speed
+    pub speed: f32,
 }
 pub type Asteroid = Mob;
 

@@ -1,6 +1,3 @@
-use super::components::*;
-use super::player::*;
-use super::state::*;
 use bevy::prelude::*;
 use bevy_rapier2d::{
     physics::RigidBodyHandleComponent,
@@ -12,6 +9,11 @@ use bevy_rapier2d::{
     },
 };
 use rand::{thread_rng, Rng};
+use std::f32;
+use super::components::*;
+use super::player::*;
+use super::state::*;
+
 
 pub const WINDOW_WIDTH: u32 = 720;
 pub const WINDOW_HEIGHT: u32 = 720;
@@ -66,7 +68,8 @@ pub fn spawn_asteroid_system(
             AsteroidSize::Small => 2.8 / 2.0,
         };
         let body = RigidBodyBuilder::new_dynamic()
-            .translation(event.x, event.y);
+            .translation(event.x, event.y)
+            .linvel(5.0, 0.0);
         let collider = ColliderBuilder::ball(radius).friction(-0.3);
         commands
             .spawn(SpriteComponents {
@@ -80,6 +83,9 @@ pub fn spawn_asteroid_system(
             .with(Asteroid {
                 size: event.size,
                 lifeforce: Timer::from_seconds(10.0, false),
+                brain: event.brain.clone(),
+                rotation_speed: f32::consts::TAU / 4.0,
+                speed: 4.0,
             })
             .with(Damage { value: 1 })
             .with(body)
@@ -114,6 +120,7 @@ pub fn arena_spawn(
                         size: AsteroidSize::Small,
                         x: x * ARENA_WIDTH,
                         y: y * ARENA_HEIGHT,
+                        brain: runstate.gene_pool.spawn(),
                     });
                 }
             }

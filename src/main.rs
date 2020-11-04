@@ -52,6 +52,7 @@ fn main() {
         .add_system(user_input_system.system())
 //        .add_system(player_dampening_system.system())
         .add_system(mob::expire.system())
+        .add_system(mob::think.system())
         .add_system(ship_cannon_system.system())
         .add_system(despawn_laser_system.system())
         .add_system(handle_explosion.system())

@@ -117,7 +117,6 @@ pub fn user_input_system(
         }
     }
     if runstate.gamestate.is(GameState::Game) {
-        let player = runstate.player.unwrap();
         let speed = if input.pressed(KeyCode::W) || input.pressed(KeyCode::Up) {
             1
         } else {
@@ -131,6 +130,7 @@ pub fn user_input_system(
             0
         };
         
+        let player = runstate.player.unwrap();
         if let Ok((body_handle, ship)) = query.get_mut(player) {
             let mut body = bodies.get_mut(body_handle.handle()).unwrap();
             let rotation = rotation as f32 * ship.rotation_speed;

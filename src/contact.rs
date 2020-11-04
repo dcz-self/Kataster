@@ -6,8 +6,6 @@ use bevy_rapier2d::{
         geometry::{ContactEvent, Proximity},
     },
 };
-use rand::{thread_rng, Rng};
-use super::arena::*;
 use super::bobox::BodyHandleToEntity;
 use super::components::*;
 use super::state::*;
@@ -90,28 +88,6 @@ pub fn contact_system(
                             x: laser_body.position.translation.x,
                             y: laser_body.position.translation.y,
                         });
-                        if asteroid.size != AsteroidSize::Small {
-                            let (size, radius) = match asteroid.size {
-                                AsteroidSize::Big => (AsteroidSize::Medium, 5.0),
-                                AsteroidSize::Medium => (AsteroidSize::Small, 2.0),
-                                _ => panic!(),
-                            };
-                            let mut rng = thread_rng();
-                            for _ in 0..rng.gen_range(1, 4) {
-                                let x = asteroid_body.position.translation.x
-                                    + rng.gen_range(-radius, radius);
-                                let y = asteroid_body.position.translation.y
-                                    + rng.gen_range(-radius, radius);
-                                let vx = rng.gen_range(-ARENA_WIDTH / radius, ARENA_WIDTH / radius);
-                                let vy =
-                                    rng.gen_range(-ARENA_HEIGHT / radius, ARENA_HEIGHT / radius);
-                                asteroid_spawn_events.send(AsteroidSpawnEvent {
-                                    size,
-                                    x,
-                                    y,
-                                });
-                            }
-                        }
                     }
                     commands.despawn(e1);
                     commands.despawn(e2);

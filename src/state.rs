@@ -1,7 +1,9 @@
-use core::fmt;
-
-use super::arena::*;
 use bevy::prelude::*;
+use core::fmt;
+use super::arena::*;
+use super::mob::GenePool;
+
+
 /// Component to tag an entity as only needed in one game state
 pub struct ForStates {
     pub states: Vec<GameState>,
@@ -20,6 +22,7 @@ pub struct RunState {
     pub player: Option<Entity>,
     pub arena: Option<Arena>,
     pub score: Option<u32>,
+    pub gene_pool: GenePool,
 }
 
 impl RunState {
@@ -29,6 +32,7 @@ impl RunState {
             player: None,
             arena: None,
             score: None,
+            gene_pool: GenePool::new_eden(),
         }
     }
 }
