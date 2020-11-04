@@ -3,8 +3,8 @@ use bevy::prelude::*;
 pub struct Ship {
     /// Ship rotation speed in rad/s
     pub rotation_speed: f32,
-    /// Ship thrust N
-    pub thrust: f32,
+    /// Max movement speed
+    pub speed: f32,
     /// Ship life points
     pub life: u32,
     /// Cannon auto-fire timer

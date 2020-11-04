@@ -43,7 +43,7 @@ pub fn spawn_player(
         })
         .with(Ship {
             rotation_speed: std::f32::consts::TAU,
-            thrust: 160.0,
+            speed: 10.0,
             life: START_LIFE,
             cannon_timer: Timer::from_seconds(0.2, false),
         })
@@ -118,9 +118,11 @@ pub fn user_input_system(
     }
     if runstate.gamestate.is(GameState::Game) {
         let player = runstate.player.unwrap();
-        let thrust = if input.pressed(KeyCode::W) || input.pressed(KeyCode::Up) {
+        let speed = if input.pressed(KeyCode::W) || input.pressed(KeyCode::Up) {
             1
-        } else { 0 };
+        } else {
+            0
+        };
         let rotation = if input.pressed(KeyCode::A) || input.pressed(KeyCode::Left) {
             1
         } else if input.pressed(KeyCode::D) || input.pressed(KeyCode::Right) {
@@ -136,12 +138,15 @@ pub fn user_input_system(
                 body.wake_up(true);
                 body.angvel = rotation;
             }
-            if thrust != 0 {
-                let force = body.position.rotation.transform_vector(&Vector2::y())
-                    * thrust as f32
-                    * ship.thrust;
-                body.wake_up(true);
-                body.apply_force(force);
+            // if neither rotation nor speed changed, can ignore
+            body.wake_up(true);
+            body.linvel = if speed != 0 {
+                let velocity = body.position.rotation.transform_vector(&Vector2::y())
+                    * speed as f32
+                    * ship.speed;
+                velocity
+            } else {
+                Vector2::zeros()
             }
         }
         if input.pressed(KeyCode::Space) {
