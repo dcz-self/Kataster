@@ -26,9 +26,9 @@ pub fn contact_system(
     bh_to_e: Res<BodyHandleToEntity>,
     bodies: ResMut<RigidBodySet>,
     damages: Query<&Damage>,
-    ships: Query<Mut<Ship>>,
-    lasers: Query<Mut<Laser>>,
-    asteroids: Query<Mut<Asteroid>>,
+    mut ships: Query<Mut<Ship>>,
+    mut lasers: Query<Mut<Laser>>,
+    mut asteroids: Query<Mut<Asteroid>>,
     handles: Query<&RigidBodyHandleComponent>,
 ) {
     if runstate.gamestate.is(GameState::Game) {
@@ -38,9 +38,9 @@ pub fn contact_system(
                 ContactEvent::Started(h1, h2) => {
                     let e1 = *(bh_to_e.0.get(&h1).unwrap());
                     let e2 = *(bh_to_e.0.get(&h2).unwrap());
-                    if ships.get::<Ship>(e1).is_ok() && damages.get::<Damage>(e2).is_ok() {
+                    if ships.get_mut(e1).is_ok() && damages.get(e2).is_ok() {
                         contacts.push(Contacts::ShipAsteroid(e1, e2));
-                    } else if ships.get::<Ship>(e2).is_ok() && damages.get::<Damage>(e1).is_ok() {
+                    } else if ships.get_mut(e2).is_ok() && damages.get(e1).is_ok() {
                         contacts.push(Contacts::ShipAsteroid(e2, e1));
                     }
                 }
@@ -51,9 +51,9 @@ pub fn contact_system(
             if proximity_event.new_status == Proximity::Intersecting {
                 let e1 = *(bh_to_e.0.get(&proximity_event.collider1).unwrap());
                 let e2 = *(bh_to_e.0.get(&proximity_event.collider2).unwrap());
-                if asteroids.get::<Asteroid>(e2).is_ok() && lasers.get::<Laser>(e1).is_ok() {
+                if asteroids.get_mut(e2).is_ok() && lasers.get_mut(e1).is_ok() {
                     contacts.push(Contacts::LaserAsteroid(e1, e2));
-                } else if asteroids.get::<Asteroid>(e1).is_ok() && lasers.get::<Laser>(e2).is_ok() {
+                } else if asteroids.get_mut(e1).is_ok() && lasers.get_mut(e2).is_ok() {
                     contacts.push(Contacts::LaserAsteroid(e2, e1));
                 }
             }
@@ -62,12 +62,12 @@ pub fn contact_system(
             match contact {
                 Contacts::LaserAsteroid(e1, e2) => {
                     let laser_handle = handles
-                        .get::<RigidBodyHandleComponent>(e1)
+                        .get(e1)
                         .unwrap()
                         .handle();
-                    let asteroid = asteroids.get::<Asteroid>(e2).unwrap();
+                    let asteroid = asteroids.get_mut(e2).unwrap();
                     let asteroid_handle = handles
-                        .get::<RigidBodyHandleComponent>(e2)
+                        .get(e2)
                         .unwrap()
                         .handle();
                     runstate.score = runstate.score.and_then(|score| {
@@ -122,13 +122,13 @@ pub fn contact_system(
                     let player_body = bodies
                         .get(
                             handles
-                                .get::<RigidBodyHandleComponent>(e1)
+                                .get(e1)
                                 .unwrap()
                                 .handle(),
                         )
                         .unwrap();
-                    let mut ship = ships.get_mut::<Ship>(e1).unwrap();
-                    let damage = damages.get::<Damage>(e2).unwrap();
+                    let mut ship = ships.get_mut(e1).unwrap();
+                    let damage = damages.get(e2).unwrap();
                     ship.life -= damage.value;
                     if ship.life <= 0 {
                         explosion_spawn_events.send(ExplosionSpawnEvent {
