@@ -2155,6 +2155,7 @@ dependencies = [
  "byteorder",
  "image",
  "rand",
+ "serde",
 ]
 
 [[package]]

@@ -8,7 +8,7 @@ use rand;
 use rand::distributions::Uniform;
 use std::collections::VecDeque;
 use std::f32;
-use super::components::Mob;
+use super::components::{ Borg, Mob };
 use super::state::{ GameState, RunState };
 
 
@@ -91,19 +91,19 @@ pub fn think(
     mut runstate: ResMut<RunState>,
     mut bodies: ResMut<RigidBodySet>,
     mobs: Query<(&RigidBodyHandleComponent, &Mob)>,
-    query: Query<&RigidBodyHandleComponent>,
+    borgs: Query<(&RigidBodyHandleComponent, &Borg)>,
 ) {
-    let player_position = runstate.player
-        .map(|player| {
-            let player = query.get(player).unwrap();
-            let body = bodies.get(player.handle()).unwrap();
+    let borg_position = borgs.iter()
+        .next() // Only take first borg. Should be expanded for multiplayer.
+        .map(|(body, borg)| {
+            let body = bodies.get(body.handle()).unwrap();
             Point2::from(body.position.translation.vector)
         })
         .unwrap_or(Point2::new(0.0, 0.0));
         
     for (body, mob) in mobs.iter() {
         let mut body = bodies.get_mut(body.handle()).unwrap();
-        let point: Point2<f32> = body.position.inverse_transform_point(&player_position);
+        let point: Point2<f32> = body.position.inverse_transform_point(&borg_position);
         let rot = Rotation2::rotation_between(
             &Vector2::new(0.0, 1.0),
             &Vector2::new(point.x, point.y)
