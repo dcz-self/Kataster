@@ -5,8 +5,8 @@ use bevy_rapier2d::{
 };
 use bevy_rapier2d::na::{ Point2, Rotation2, Vector2 };
 use rand;
-use rand::distributions::Uniform;
-use std::collections::VecDeque;
+use rand::distributions::{ Bernoulli, Uniform };
+use rand::distributions::weighted::WeightedIndex;
 use std::f32;
 use super::components::{ Borg, Mob };
 use super::state::{ GameState, RunState };
@@ -24,7 +24,7 @@ pub struct BrainCommands {
 }
 
 /// Controls mobs by calculating a simple function, and being randomizeable.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Brain {
     /// favorite_angle (bias), angle
     weights: Vec<f32>,
@@ -50,6 +50,8 @@ impl Brain {
     }
 }
 
+pub type Genotype = Brain;
+
 /// Same shape as Genotype, but weights reflect variances in values.
 pub struct Variances {
     // body
@@ -58,26 +60,43 @@ pub struct Variances {
 
 #[derive(Debug)]
 pub struct GenePool {
-    genotypes: VecDeque<Brain>,
+    genotypes: Vec<(Genotype, f64)>,
+    /// How often spawn a new blank (random) genotype.
+    blank_frequency: f64,
 }
 
 impl GenePool {
     pub fn new_eden() -> GenePool {
         GenePool {
-            genotypes: VecDeque::from(vec![
-                Brain { weights: vec![f32::consts::TAU / 10.0, 1.0] }, // Adam
-                Brain { weights: vec![0.0, 1.0] }, // Eve
-            ]),
+            genotypes: vec![
+                (Brain { weights: vec![f32::consts::TAU / 10.0, 1.0] }, 1.0), // Adam
+                (Brain { weights: vec![0.0, 1.0] }, 1.0),// Eve
+            ],
+            blank_frequency: 0.1,
         }
     }
 
-    pub fn spawn(&mut self) -> Brain {
-        self.genotypes.pop_front()
-            .unwrap_or_else(|| Brain::randomize())
+    pub fn spawn(&mut self) -> Genotype {
+        let blanks = Bernoulli::new(self.blank_frequency).unwrap();
+        if blanks.sample(&mut rand::thread_rng()) {
+            Genotype::randomize()
+        } else {
+            let distribution = WeightedIndex::new(
+                self.genotypes.iter().map(|(_k, v)| v)
+            ).unwrap();
+            let (genotype, mut weight) = &self.genotypes[distribution.sample(&mut rand::thread_rng())];
+            weight /= 2.0;
+            genotype.clone()
+        }
     }
 
-    pub fn preserve(&mut self, genotype: Brain) {
-        self.genotypes.push_back(genotype)
+    pub fn preserve(&mut self, genotype: Genotype) {
+        let index = self.genotypes.iter()
+            .position(|(candidate, weight)| candidate == &genotype);
+        match index {
+            Some(idx) => { self.genotypes[idx].1 += 1.0 },
+            None => self.genotypes.push((genotype, 1.0)),
+        };
     }
 
     // Calculate the variance of each element in the genotype
