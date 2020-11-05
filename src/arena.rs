@@ -65,8 +65,7 @@ pub fn spawn_asteroid_system(
             AsteroidSize::Small => 2.8 / 2.0,
         };
         let body = RigidBodyBuilder::new_dynamic()
-            .translation(event.x, event.y)
-            .linvel(0.0, 0.0);
+            .translation(event.x, event.y);
         let collider = ColliderBuilder::ball(radius).friction(-0.3);
         commands
             .spawn(SpriteSheetComponents {
@@ -106,21 +105,19 @@ pub fn arena_spawn(
         if arena.asteroid_spawn_timer.finished {
             let n_asteroid = asteroids.iter().count();
             arena.asteroid_spawn_timer.reset();
-            if n_asteroid < 3 {
-                arena.asteroid_spawn_timer.duration =
-                    (0.8 * arena.asteroid_spawn_timer.duration).max(0.1);
-                let mut rng = thread_rng();
-                
-                let x: f32 = rng.gen_range(-0.5, 0.5);
-                let y: f32 = rng.gen_range(-0.5, 0.5);
-                if x.abs() > 0.25 || y.abs() > 0.25 {
-                    asteroid_spawn_events.send(AsteroidSpawnEvent {
-                        size: AsteroidSize::Small,
-                        x: x * ARENA_WIDTH,
-                        y: y * ARENA_HEIGHT,
-                        brain: runstate.gene_pool.spawn(),
-                    });
-                }
+            arena.asteroid_spawn_timer.duration =
+                (0.9 * arena.asteroid_spawn_timer.duration);
+            let mut rng = thread_rng();
+            
+            let x: f32 = rng.gen_range(-0.5, 0.5);
+            let y: f32 = rng.gen_range(-0.5, 0.5);
+            if x.abs() > 0.25 || y.abs() > 0.25 {
+                asteroid_spawn_events.send(AsteroidSpawnEvent {
+                    size: AsteroidSize::Small,
+                    x: x * ARENA_WIDTH,
+                    y: y * ARENA_HEIGHT,
+                    brain: runstate.gene_pool.spawn(),
+                });
             }
         }
     }

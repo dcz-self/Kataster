@@ -114,11 +114,9 @@ pub fn think(
             .min(mob.rotation_speed)
             .max(-mob.rotation_speed);
 
-        if turn_speed != body.angvel {
-            body.wake_up(true);
-            body.angvel = turn_speed;
-            body.linvel = body.position.rotation.transform_vector(&Vector2::new(0.0, mob.speed));
-        }
+        body.wake_up(true);
+        body.angvel = turn_speed;
+        body.linvel = body.position.rotation.transform_vector(&Vector2::new(0.0, mob.speed));
     }
 }
 
