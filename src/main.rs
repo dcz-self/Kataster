@@ -10,8 +10,10 @@ mod contact;
 mod explosion;
 mod laser;
 mod mob;
+mod paq;
 mod player;
 mod state;
+mod tga;
 mod ui;
 
 use arena::*;
@@ -38,6 +40,7 @@ fn main() {
         .add_event::<ExplosionSpawnEvent>()
         .add_plugin(RapierPhysicsPlugin)
         .add_plugins(DefaultPlugins)
+        .init_asset_loader::<paq::Loader>()
         .add_resource(RapierConfiguration {
             gravity: Vector2::zeros(),
             ..Default::default()
@@ -88,8 +91,10 @@ pub fn setup(
             ..Default::default()
         })
         .spawn(UiCameraComponents::default());
+    //let texture_handle = asset_server
+      //  .load("pexels-francesco-ungaro-998641.png");
     let texture_handle = asset_server
-        .load("pexels-francesco-ungaro-998641.png");
+        .load("crimson.paq");
     commands.spawn(SpriteComponents {
         transform: {
             Transform::from_translation(Vec3::new(0.0, 0.0, -10.0))
