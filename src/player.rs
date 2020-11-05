@@ -10,7 +10,8 @@ use bevy_rapier2d::{
         //        math::Point,
     },
 };
-use bevy_rapier2d::na::{ Complex, Point2, Unit, Vector2 };
+use bevy_rapier2d::na::{ Point2, Rotation2, Translation2, UnitComplex, Vector2 };
+use super::arena;
 use super::components::*;
 use super::laser::*;
 use super::state::*;
@@ -106,13 +107,23 @@ pub fn point_at(
     body: Mut<RigidBodyHandleComponent>,
     borg: &Borg,
 ) {
-    let body = bodies.get_mut(body.handle()).unwrap();
+    let mut body = bodies.get_mut(body.handle()).unwrap();
     for event in EventReader::<CursorMoved>::default().iter(&cursor_moved) {
-        let target_position = event.position;
-        let point: Point2<f32> = body.position.inverse_transform_point(
-            &Point2::new(target_position.x(), target_position.y())
+        let event_position = Point2::new(event.position.x(), event.position.y());
+        let target_position = Translation2::new(
+            arena::WINDOW_WIDTH as f32 / 2.0,
+            arena::WINDOW_HEIGHT as f32 / 2.0,
+        ).inverse_transform_point(&event_position);
+        let target_position = target_position * arena::CAMERA_SCALE;
+        let point = body.position.translation.inverse_transform_point(&target_position);
+        // Omg, why is dealing with Rapier so hard?
+        // Every property has 3 representations
+        // and they never convert into each other directly.
+        let rot = Rotation2::rotation_between(
+            &Vector2::new(0.0, 1.0),
+            &Vector2::new(point.x, point.y)
         );
-        body.position.rotation = Unit::new_normalize(Complex::from(point));
+        body.position.rotation = UnitComplex::from_rotation_matrix(&rot);
     }
     body.wake_up(true);
 }
