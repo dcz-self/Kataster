@@ -43,11 +43,12 @@ pub fn spawn_player(
             material: materials.add(texture_handle.into()),
             ..Default::default()
         })
-        .with(Ship {
+        .with(Borg {
             rotation_speed: std::f32::consts::TAU,
             speed: 10.0,
             life: START_LIFE,
             cannon_timer: Timer::from_seconds(0.2, false),
+            looks_at: Point2::new(0.0, 0.0),
         })
         .with(body)
         .with(collider)
@@ -104,8 +105,8 @@ pub fn ship_cannon_system(time: Res<Time>, mut ship: Query<Mut<Ship>>) {
 pub fn point_at(
     mut bodies: ResMut<RigidBodySet>,
     cursor_moved: Res<Events<CursorMoved>>,
-    body: Mut<RigidBodyHandleComponent>,
-    borg: &Borg,
+    body: &RigidBodyHandleComponent,
+    mut borg: Mut<Borg>,
 ) {
     let mut body = bodies.get_mut(body.handle()).unwrap();
     for event in EventReader::<CursorMoved>::default().iter(&cursor_moved) {
@@ -115,7 +116,10 @@ pub fn point_at(
             arena::WINDOW_HEIGHT as f32 / 2.0,
         ).inverse_transform_point(&event_position);
         let target_position = target_position * arena::CAMERA_SCALE;
-        let point = body.position.translation.inverse_transform_point(&target_position);
+        borg.looks_at = target_position;
+        // TODO: move this to rendering/movement.
+        // Position needs to be updated on every move.
+        let point = body.position.translation.inverse_transform_point(&borg.looks_at);
         // Omg, why is dealing with Rapier so hard?
         // Every property has 3 representations
         // and they never convert into each other directly.

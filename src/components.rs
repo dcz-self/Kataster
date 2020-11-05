@@ -1,4 +1,5 @@
 use bevy::prelude::Timer;
+use bevy_rapier2d::na::Point2;
 use super::mob;
 
 
@@ -11,6 +12,7 @@ pub struct Borg {
     pub life: u32,
     /// Cannon auto-fire timer
     pub cannon_timer: Timer,
+    pub looks_at: Point2<f32>,
 }
 pub type Ship = Borg;
 
