@@ -94,7 +94,7 @@ pub fn setup(
     //let texture_handle = asset_server
       //  .load("pexels-francesco-ungaro-998641.png");
     let texture_handle = asset_server
-        .load("crimson.paq");
+        .load("crimson.paq:tag.tga");
     commands.spawn(SpriteComponents {
         transform: {
             Transform::from_translation(Vec3::new(0.0, 0.0, -10.0))
