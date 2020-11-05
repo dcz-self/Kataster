@@ -56,6 +56,12 @@ pub struct Mob {
 }
 pub type Asteroid = Mob;
 
+impl Mob {
+    pub fn genotype(&self) -> &mob::Brain {
+        &self.brain
+    }
+}
+
 pub struct Laser {
     pub despawn_timer: Timer,
 }

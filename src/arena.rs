@@ -106,7 +106,7 @@ pub fn arena_spawn(
             let n_asteroid = asteroids.iter().count();
             arena.asteroid_spawn_timer.reset();
             arena.asteroid_spawn_timer.duration =
-                (0.9 * arena.asteroid_spawn_timer.duration);
+                0.9 * arena.asteroid_spawn_timer.duration;
             let mut rng = thread_rng();
             
             let x: f32 = rng.gen_range(-0.5, 0.5);

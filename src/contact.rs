@@ -27,7 +27,7 @@ pub fn contact_system(
     damages: Query<&Damage>,
     mut ships: Query<Mut<Ship>>,
     mut lasers: Query<Mut<Laser>>,
-    mut asteroids: Query<Mut<Asteroid>>,
+    mut mobs: Query<Mut<Mob>>,
     handles: Query<&RigidBodyHandleComponent>,
 ) {
     if runstate.gamestate.is(GameState::Game) {
@@ -47,6 +47,7 @@ pub fn contact_system(
             };
         }
         while let Ok(proximity_event) = events.proximity_events.pop() {
+            let mut asteroids = &mut mobs;
             if proximity_event.new_status == Proximity::Intersecting {
                 let e1 = *(bh_to_e.0.get(&proximity_event.collider1).unwrap());
                 let e2 = *(bh_to_e.0.get(&proximity_event.collider2).unwrap());
@@ -60,6 +61,7 @@ pub fn contact_system(
         for contact in contacts.into_iter() {
             match contact {
                 Contacts::LaserAsteroid(e1, e2) => {
+                    let mut asteroids = &mut mobs;
                     let laser_handle = handles
                         .get(e1)
                         .unwrap()
@@ -119,6 +121,9 @@ pub fn contact_system(
                             y: player_body.position.translation.y,
                         });
                     }
+                    let mob = mobs.get_mut(e2).unwrap();
+                    runstate.gene_pool.preserve(mob.genotype().clone());
+                    commands.despawn(e2);
                 }
             }
         }
