@@ -54,6 +54,7 @@ fn main() {
         .add_plugin(RapierUtilsPlugin)
         .add_system(hold_player.system())
         .add_system(user_input_system.system())
+        .add_system(player::point_at.system())
 //        .add_system(player_dampening_system.system())
         .add_system(mob::expire.system())
         .add_system(mob::think.system())

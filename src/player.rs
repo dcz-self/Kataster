@@ -1,8 +1,8 @@
 use bevy::app::AppExit;
 use bevy::prelude::*;
-use bevy::prelude::KeyCode;
+use bevy::prelude::{ EventReader, KeyCode };
+use bevy::window::CursorMoved;
 use bevy_rapier2d::{
-    na::Vector2,
     physics::{RapierConfiguration, RigidBodyHandleComponent},
     rapier::{
         dynamics::{RigidBodyBuilder, RigidBodySet},
@@ -10,6 +10,7 @@ use bevy_rapier2d::{
         //        math::Point,
     },
 };
+use bevy_rapier2d::na::{ Complex, Point2, Unit, Vector2 };
 use super::components::*;
 use super::laser::*;
 use super::state::*;
@@ -97,6 +98,23 @@ pub fn ship_cannon_system(time: Res<Time>, mut ship: Query<Mut<Ship>>) {
     for mut ship in &mut ship.iter_mut() {
         ship.cannon_timer.tick(time.delta_seconds);
     }
+}
+
+pub fn point_at(
+    mut bodies: ResMut<RigidBodySet>,
+    cursor_moved: Res<Events<CursorMoved>>,
+    body: Mut<RigidBodyHandleComponent>,
+    borg: &Borg,
+) {
+    let body = bodies.get_mut(body.handle()).unwrap();
+    for event in EventReader::<CursorMoved>::default().iter(&cursor_moved) {
+        let target_position = event.position;
+        let point: Point2<f32> = body.position.inverse_transform_point(
+            &Point2::new(target_position.x(), target_position.y())
+        );
+        body.position.rotation = Unit::new_normalize(Complex::from(point));
+    }
+    body.wake_up(true);
 }
 
 pub fn user_input_system(
