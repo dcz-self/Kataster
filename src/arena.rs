@@ -52,16 +52,13 @@ pub fn spawn_asteroid_system(
     mut commands: Commands,
     mut local_state: Local<SpawnAsteroidState>,
     asset_server: Res<AssetServer>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
+    mut texture_atlases: ResMut<Assets<TextureAtlas>>,
     events: Res<Events<AsteroidSpawnEvent>>,
 ) {
     for event in local_state.event_reader.iter(&events) {
-        let texture_handle = asset_server
-            .load(match event.size {
-                AsteroidSize::Big => "meteorBrown_big1.png",
-                AsteroidSize::Medium => "meteorBrown_med1.png",
-                AsteroidSize::Small => "meteorBrown_small1.png",
-            });
+        let texture_handle = asset_server.load("crimson/eiliens.png");
+        let texture_atlas = TextureAtlas::from_grid(texture_handle, Vec2::new(64.0, 64.0), 8, 8);
+        let texture_atlas_handle = texture_atlases.add(texture_atlas);
         let radius = match event.size {
             AsteroidSize::Big => 10.1 / 2.0,
             AsteroidSize::Medium => 4.3 / 2.0,
@@ -72,12 +69,13 @@ pub fn spawn_asteroid_system(
             .linvel(0.0, 0.0);
         let collider = ColliderBuilder::ball(radius).friction(-0.3);
         commands
-            .spawn(SpriteComponents {
+            .spawn(SpriteSheetComponents {
+                texture_atlas: texture_atlas_handle,
+                sprite: TextureAtlasSprite::new(0),
                 transform: {
                     Transform::from_translation(Vec3::new(event.x, event.y, -5.0))
                         .mul_transform(Transform::from_scale(Vec3::new(0.1, 0.1, 0.1)))
                 },
-                material: materials.add(texture_handle.into()),
                 ..Default::default()
             })
             .with(Asteroid {

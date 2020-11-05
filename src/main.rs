@@ -22,6 +22,7 @@ use components::*;
 use contact::*;
 use explosion::*;
 use laser::*;
+use paq::Paq;
 use player::*;
 use state::*;
 use ui::*;
@@ -91,10 +92,10 @@ pub fn setup(
             ..Default::default()
         })
         .spawn(UiCameraComponents::default());
-    //let texture_handle = asset_server
-      //  .load("pexels-francesco-ungaro-998641.png");
     let texture_handle = asset_server
-        .load("crimson.paq:tag.tga");
+        .load("pexels-francesco-ungaro-998641.png");
+    //let paq_handle: Handle<Paq> = asset_server.load("crimson.paq");
+    //let texture_handle = asset_server.load("crimson.paq:panel.tga");
     commands.spawn(SpriteComponents {
         transform: {
             Transform::from_translation(Vec3::new(0.0, 0.0, -10.0))
