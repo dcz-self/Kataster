@@ -56,8 +56,8 @@ pub fn spawn_asteroid_system(
     events: Res<Events<AsteroidSpawnEvent>>,
 ) {
     for event in local_state.event_reader.iter(&events) {
-        let texture_handle = asset_server.load("crimson/eiliens.png");
-        let texture_atlas = TextureAtlas::from_grid(texture_handle, Vec2::new(64.0, 64.0), 8, 8);
+        let texture_handle = asset_server.load("louse.png");
+        let texture_atlas = TextureAtlas::from_grid(texture_handle, Vec2::new(64.0, 64.0), 1, 1);
         let texture_atlas_handle = texture_atlases.add(texture_atlas);
         let radius = match event.size {
             AsteroidSize::Big => 10.1 / 2.0,

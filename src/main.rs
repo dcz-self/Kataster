@@ -94,7 +94,7 @@ pub fn setup(
         })
         .spawn(UiCameraComponents::default());
     let texture_handle = asset_server
-        .load("pexels-francesco-ungaro-998641.png");
+        .load("diffus.png");
     //let paq_handle: Handle<Paq> = asset_server.load("crimson.paq");
     //let texture_handle = asset_server.load("crimson.paq:panel.tga");
     commands.spawn(SpriteComponents {

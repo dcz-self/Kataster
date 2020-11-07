@@ -25,6 +25,7 @@ pub fn spawn_player(
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     let texture_handle = asset_server.load("playerShip2_red.png");
+    let arrow = asset_server.load("arrow.png");
     let body = RigidBodyBuilder::new_dynamic();
     let collider = ColliderBuilder::ball(1.0);
     // The triangle Collider does not compute mass
@@ -54,6 +55,17 @@ pub fn spawn_player(
         .with(collider)
         .with(ForStates {
             states: vec![GameState::Game, GameState::Pause, GameState::GameOver],
+        })
+        .with_children(|parent| {
+            parent.spawn(SpriteComponents {
+                transform: Transform {
+                    translation: Vec3::new(0.0, 300.0, -5.0),
+                    scale: Vec3::splat(1.0 / 10.0),
+                    ..Default::default()
+                },
+                material: materials.add(arrow.into()),
+                ..Default::default()
+            });
         });
     let player_entity = commands.current_entity().unwrap();
     runstate.player = Some(player_entity);
