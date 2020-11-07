@@ -1,7 +1,10 @@
 [package]
-name = "kataster"
+name = "breedmatic"
 version = "0.1.0"
-authors = ["Boris Boutillier <boris.boutillier@gmail.com>"]
+authors = [
+    "Dorota Czaplejewicz <gihuac.dcz@porcupinefactory.org>",
+    "Boris Boutillier <boris.boutillier@gmail.com>"
+]
 edition = "2018"
 
 [dependencies]

@@ -31,7 +31,7 @@ const START_LIFE: u32 = 3;
 fn main() {
     App::build()
         .add_resource(WindowDescriptor {
-            title: "Kataster".to_string(),
+            title: "Breedmatic".to_string(),
             width: WINDOW_WIDTH,
             height: WINDOW_HEIGHT,
             ..Default::default()

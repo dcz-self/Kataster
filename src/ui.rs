@@ -39,7 +39,7 @@ pub fn start_menu(
                             ..Default::default()
                         },
                         text: Text {
-                            value: "Kataster".to_string(),
+                            value: "Breedmatic".to_string(),
                             font: font_handle.clone(),
                             style: TextStyle {
                                 font_size: 100.0,

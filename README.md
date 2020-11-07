@@ -1,9 +1,18 @@
-# Kataster
-A single screen simple space shooter developped in Rust with Bevy and Rapier2d.
+# Breedmatic
 
-It will remain a simple demonstration game.
+An experiment with evolving creatures.
 
-![](media/Kataster_demo.gif)
+The creatures breed and try to flood you. Whoever survives before being shot is allowed to breed again.
+
+Assets are still missing!
+
+Based on [Kataster](https://github.com/Bobox214/Kataster).
+
+## License
+
+The entire code may be distributed under AGPL 3.0 or higher, at your leisure.
+
+In addition, remaining Kataster pieces are licensed under MIT.
 
 https://www.rust-lang.org/
 

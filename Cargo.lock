@@ -832,6 +832,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0d8c1fef690941d3e7788d328517591fecc684c084084702d6ff1641e993699a"
 
 [[package]]
+name = "breedmatic"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "bevy",
+ "bevy_rapier2d",
+ "byteorder",
+ "image",
+ "rand",
+ "serde",
+]
+
+[[package]]
 name = "bumpalo"
 version = "3.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2143,19 +2156,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ca059e81d9486668f12d455a4ea6daa600bd408134cd17e3d3fb5a32d1f016f8"
 dependencies = [
  "wasm-bindgen",
-]
-
-[[package]]
-name = "kataster"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "bevy",
- "bevy_rapier2d",
- "byteorder",
- "image",
- "rand",
- "serde",
 ]
 
 [[package]]
