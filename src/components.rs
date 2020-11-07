@@ -86,10 +86,10 @@ pub struct Damage {
 }
 
 pub fn swivel_at(
-    mut query: Query<(&AttachedToEntity, &LooksAt, Mut<GlobalTransform>)>,
+    mut query: Query<(&AttachedToEntity, &LooksAt, Mut<GlobalTransform>, Mut<Transform>)>,
     entities: Query<Without<AttachedToEntity, &GlobalTransform>>,
 ) {
-    for (target_entity, looks_at, mut transform) in query.iter_mut() {
+    for (target_entity, looks_at, mut gtransform, mut transform) in query.iter_mut() {
         if let Ok(parent_transform) = entities.get(target_entity.0) {
             transform.translation = parent_transform.translation.clone();
             let translation = na::Translation2::new(
@@ -102,9 +102,10 @@ pub fn swivel_at(
                 &Vector2::new(0.0, 1.0),
                 &Vector2::new(point.x, point.y)
             );
-            //println!(
+
             let c = UnitComplex::from_rotation_matrix(&rot);
             transform.rotation = Quat::from_axis_angle(Vec3::new(0.0, 0.0, 1.0), c.angle());
+            gtransform.rotation = Quat::from_axis_angle(Vec3::new(0.0, 0.0, 1.0), c.angle());
         }
     }
 }
