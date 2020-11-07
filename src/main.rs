@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use bevy::render;
 use bevy_rapier2d::na::Vector2;
 use bevy_rapier2d::physics::RapierConfiguration;
 use bevy_rapier2d::physics::RapierPhysicsPlugin;

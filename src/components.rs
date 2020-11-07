@@ -92,9 +92,10 @@ pub fn swivel_at(
     for (target_entity, looks_at, mut gtransform, mut transform) in query.iter_mut() {
         if let Ok(parent_transform) = entities.get(target_entity.0) {
             transform.translation = parent_transform.translation.clone();
+            gtransform.translation = parent_transform.translation.clone();
             let translation = na::Translation2::new(
-                transform.translation.x(),
-                transform.translation.y(),
+                gtransform.translation.x(),
+                gtransform.translation.y(),
             );
             // Lol, this is so inefficient it's funny
             let point = translation.inverse_transform_point(&looks_at.0);
