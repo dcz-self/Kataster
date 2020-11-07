@@ -10,7 +10,7 @@ use bevy_rapier2d::{
         //        math::Point,
     },
 };
-use bevy_rapier2d::na::{ Point2, Rotation2, Translation2, UnitComplex, Vector2 };
+use bevy_rapier2d::na::{ Point2, Translation2, Vector2 };
 use super::arena;
 use super::components::{AttachedToEntity, Borg, LooksAt};
 use super::laser::*;

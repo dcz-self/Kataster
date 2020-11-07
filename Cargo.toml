@@ -5,6 +5,7 @@ authors = [
     "Dorota Czaplejewicz <gihuac.dcz@porcupinefactory.org>",
     "Boris Boutillier <boris.boutillier@gmail.com>"
 ]
+license = "AGPL-3.0-or-later"
 edition = "2018"
 
 [dependencies]

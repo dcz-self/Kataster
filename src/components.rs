@@ -1,9 +1,11 @@
-use bevy::prelude::{ Entity, Mut, Quat, Query, Timer, Transform, Without, Vec2, Vec3 };
+use bevy::prelude::{ Entity, GlobalTransform, Mut, Quat, Query, Res, Timer, Transform, Without, Vec3 };
 use bevy_rapier2d::na;
-use bevy_rapier2d::na::{ Point2, Rotation2, Translation, Translation2, UnitComplex, Vector2 };
-use bevy_rapier2d::rapier::math::{ Isometry, Vector };
+use bevy_rapier2d::na::{ Point2, Rotation2, UnitComplex, Vector2 };
 use super::mob;
 
+
+use bevy_rapier2d::physics::RigidBodyHandleComponent;
+use bevy_rapier2d::rapier::dynamics::RigidBodySet;
 
 pub struct AttachedToEntity(pub Entity);
 
@@ -83,25 +85,9 @@ pub struct Damage {
     pub value: u32,
 }
 
-fn from_isometry(pos: Isometry<f32>, scale: f32, transform: &mut Mut<Transform>) {
-    // Do not touch the 'z' part of the translation, used in Bevy for 2d layering
-    *transform.translation.x_mut() = pos.translation.vector.x * scale;
-    *transform.translation.y_mut() = pos.translation.vector.y * scale;
-
-    let rot = na::UnitQuaternion::new(na::Vector3::z() * pos.rotation.angle());
-    transform.rotation = Quat::from_xyzw(rot.i, rot.j, rot.k, rot.w);
-}
-
-fn to_isometry(translation: Vec2, rotation_angle: f32) -> Isometry<f32> {
-    Isometry::from_parts(
-        Translation::from(Vector::new(translation.x(), translation.y())),
-        UnitComplex::new(rotation_angle),
-    )
-}
-
 pub fn swivel_at(
-    mut query: Query<(&AttachedToEntity, &LooksAt, Mut<Transform>)>,
-    entities: Query<Without<AttachedToEntity, &Transform>>,
+    mut query: Query<(&AttachedToEntity, &LooksAt, Mut<GlobalTransform>)>,
+    entities: Query<Without<AttachedToEntity, &GlobalTransform>>,
 ) {
     for (target_entity, looks_at, mut transform) in query.iter_mut() {
         if let Ok(parent_transform) = entities.get(target_entity.0) {
@@ -111,9 +97,6 @@ pub fn swivel_at(
                 transform.translation.y(),
             );
             // Lol, this is so inefficient it's funny
-            let (axis, angle) = transform.rotation.to_axis_angle();
-            // Axis must always be Z or Idunno
-
             let point = translation.inverse_transform_point(&looks_at.0);
             let rot = Rotation2::rotation_between(
                 &Vector2::new(0.0, 1.0),

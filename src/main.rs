@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy::render;
 use bevy_rapier2d::na::Vector2;
 use bevy_rapier2d::physics::RapierConfiguration;
 use bevy_rapier2d::physics::RapierPhysicsPlugin;
@@ -46,6 +47,9 @@ fn main() {
             gravity: Vector2::zeros(),
             ..Default::default()
         })
+        // Following another entity needs to take place
+        // after Rapier had its go updating the parent's position.
+        .add_stage_after(stage::POST_UPDATE, "FOLLOW")
         // Stage added after add_default_plugins, else something messes up CLEANUP
         .add_stage_after(stage::POST_UPDATE, "HANDLE_CONTACT")
         .add_stage_after("HANDLE_CONTACT", "HANDLE_EXPLOSION")
@@ -55,7 +59,7 @@ fn main() {
         .add_system(hold_player.system())
         .add_system(user_input_system.system())
         .add_system(player::point_at_mouse.system())
-        .add_system(components::swivel_at.system())
+        .add_system_to_stage("FOLLOW", components::swivel_at.system())
 //        .add_system(player_dampening_system.system())
         .add_system(mob::expire.system())
         .add_system(mob::think.system())
