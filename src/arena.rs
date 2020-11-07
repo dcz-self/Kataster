@@ -73,7 +73,7 @@ pub fn spawn_asteroid_system(
                 sprite: TextureAtlasSprite::new(0),
                 transform: {
                     Transform::from_translation(Vec3::new(event.x, event.y, -5.0))
-                        .mul_transform(Transform::from_scale(Vec3::new(0.1, 0.1, 0.1)))
+                        .mul_transform(Transform::from_scale(Vec3::splat(0.07)))
                 },
                 ..Default::default()
             })

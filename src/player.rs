@@ -24,7 +24,7 @@ pub fn spawn_player(
     asset_server: Res<AssetServer>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    let texture_handle = asset_server.load("playerShip2_red.png");
+    let texture_handle = asset_server.load("survivor-shoot_rifle_0.png");
     let arrow = asset_server.load("arrow.png");
     let body = RigidBodyBuilder::new_dynamic();
     let collider = ColliderBuilder::ball(1.0);
@@ -38,7 +38,7 @@ pub fn spawn_player(
         .spawn(SpriteComponents {
             transform: Transform {
                 translation: Vec3::new(0.0, 0.0, -5.0),
-                scale: Vec3::splat(1.0 / 37.0),
+                scale: Vec3::splat(1.0 / 100.0),
                 ..Default::default()
             },
             material: materials.add(texture_handle.into()),
@@ -59,8 +59,8 @@ pub fn spawn_player(
         .with_children(|parent| {
             parent.spawn(SpriteComponents {
                 transform: Transform {
-                    translation: Vec3::new(0.0, 300.0, -5.0),
-                    scale: Vec3::splat(1.0 / 10.0),
+                    translation: Vec3::new(0.0, 1000.0, -5.0),
+                    scale: Vec3::splat(1.0 / 5.0),
                     ..Default::default()
                 },
                 material: materials.add(arrow.into()),
