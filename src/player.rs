@@ -12,7 +12,7 @@ use bevy_rapier2d::{
 };
 use bevy_rapier2d::na::{ Point2, Rotation2, Translation2, UnitComplex, Vector2 };
 use super::arena;
-use super::components::*;
+use super::components::{AttachedToEntity, Borg, LooksAt};
 use super::laser::*;
 use super::state::*;
 use super::START_LIFE;
@@ -48,7 +48,6 @@ pub fn spawn_player(
             speed: 10.0,
             life: START_LIFE,
             cannon_timer: Timer::from_seconds(0.2, false),
-            looks_at: Point2::new(0.0, 0.0),
         })
         .with(body)
         .with(collider)
@@ -56,15 +55,6 @@ pub fn spawn_player(
             states: vec![GameState::Game, GameState::Pause, GameState::GameOver],
         })
         .with_children(|parent| {
-            parent.spawn(SpriteComponents {
-                transform: Transform {
-                    translation: Vec3::new(0.0, 0.0, 0.0),
-                    scale: Vec3::splat(1.0),
-                    ..Default::default()
-                },
-                material: materials.add(texture_handle.into()),
-                ..Default::default()
-            });
             parent.spawn(SpriteComponents {
                 transform: Transform {
                     translation: Vec3::new(0.0, 1000.0, 0.0),
@@ -75,8 +65,21 @@ pub fn spawn_player(
                 ..Default::default()
             });
         });
-    let player_entity = commands.current_entity().unwrap();
-    runstate.player = Some(player_entity);
+    
+    let borg_entity = commands.current_entity().unwrap();
+    commands
+        .spawn(SpriteComponents {
+            transform: Transform {
+                translation: Vec3::new(0.0, 0.0, 0.0),
+                scale: Vec3::splat(1.0/100.0),
+                ..Default::default()
+            },
+            material: materials.add(texture_handle.into()),
+            ..Default::default()
+        })
+        .with(AttachedToEntity(borg_entity))
+        .with(LooksAt::default());
+    runstate.player = Some(borg_entity);
 
     // Helper points to visualize some points in space for Collider
     //commands
@@ -116,19 +119,16 @@ pub fn player_dampening_system(
     }
 }
 
-pub fn ship_cannon_system(time: Res<Time>, mut ship: Query<Mut<Ship>>) {
+pub fn ship_cannon_system(time: Res<Time>, mut ship: Query<Mut<Borg>>) {
     for mut ship in &mut ship.iter_mut() {
         ship.cannon_timer.tick(time.delta_seconds);
     }
 }
 
-pub fn point_at(
-    mut bodies: ResMut<RigidBodySet>,
+pub fn point_at_mouse(
     cursor_moved: Res<Events<CursorMoved>>,
-    body: &RigidBodyHandleComponent,
-    mut borg: Mut<Borg>,
+    mut looks_at: Mut<LooksAt>,
 ) {
-    let mut body = bodies.get_mut(body.handle()).unwrap();
     for event in EventReader::<CursorMoved>::default().iter(&cursor_moved) {
         let event_position = Point2::new(event.position.x(), event.position.y());
         let target_position = Translation2::new(
@@ -136,9 +136,12 @@ pub fn point_at(
             arena::WINDOW_HEIGHT as f32 / 2.0,
         ).inverse_transform_point(&event_position);
         let target_position = target_position * arena::CAMERA_SCALE;
-        borg.looks_at = target_position;
+        looks_at.0 = target_position;
         // TODO: move this to rendering/movement.
         // Position needs to be updated on every move.
+        
+        //transform.rotation
+        /*
         let point = body.position.translation.inverse_transform_point(&borg.looks_at);
         // Omg, why is dealing with Rapier so hard?
         // Every property has 3 representations
@@ -147,9 +150,8 @@ pub fn point_at(
             &Vector2::new(0.0, 1.0),
             &Vector2::new(point.x, point.y)
         );
-        body.position.rotation = UnitComplex::from_rotation_matrix(&rot);
+        body.position.rotation = UnitComplex::from_rotation_matrix(&rot);*/
     }
-    body.wake_up(true);
 }
 
 pub fn user_input_system(
@@ -162,7 +164,7 @@ pub fn user_input_system(
     mut rapier_configuration: ResMut<RapierConfiguration>,
     mut bodies: ResMut<RigidBodySet>,
     mut app_exit_events: ResMut<Events<AppExit>>,
-    mut query: Query<(&RigidBodyHandleComponent, Mut<Ship>)>,
+    mut query: Query<(&RigidBodyHandleComponent, Mut<Borg>)>,
 ) {
     if !runstate.gamestate.is(GameState::StartMenu) {
         if input.just_pressed(KeyCode::Back) {
