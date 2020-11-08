@@ -1,11 +1,7 @@
-use bevy::prelude::{ Entity, GlobalTransform, Mut, Quat, Query, Res, Timer, Transform, Without, Vec3 };
+use bevy::prelude::{ Entity, GlobalTransform, Mut, Quat, Query, Timer, Transform, Without, Vec3 };
 use bevy_rapier2d::na;
 use bevy_rapier2d::na::{ Point2, Rotation2, UnitComplex, Vector2 };
 use super::mob;
-
-
-use bevy_rapier2d::physics::RigidBodyHandleComponent;
-use bevy_rapier2d::rapier::dynamics::RigidBodySet;
 
 pub struct AttachedToEntity(pub Entity);
 
@@ -92,10 +88,12 @@ pub fn swivel_at(
     for (target_entity, looks_at, mut gtransform, mut transform) in query.iter_mut() {
         if let Ok(parent_transform) = entities.get(target_entity.0) {
             transform.translation = parent_transform.translation.clone();
+            // Rapier is broken by not updating deterministically,
+            // so let's work around transforms and just update them manually.
             gtransform.translation = parent_transform.translation.clone();
             let translation = na::Translation2::new(
-                gtransform.translation.x(),
-                gtransform.translation.y(),
+                transform.translation.x(),
+                transform.translation.y(),
             );
             // Lol, this is so inefficient it's funny
             let point = translation.inverse_transform_point(&looks_at.0);
