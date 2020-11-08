@@ -84,9 +84,14 @@ impl GenePool {
             let distribution = WeightedIndex::new(
                 self.genotypes.iter().map(|(_k, v)| v)
             ).unwrap();
-            let (genotype, mut weight) = &self.genotypes[distribution.sample(&mut rand::thread_rng())];
-            weight /= 2.0;
-            genotype.clone()
+            
+            self.genotypes
+                .get_mut(distribution.sample(&mut rand::thread_rng()))
+                .map(|(genotype, weight)| {
+                    *weight /= 2.0;
+                    genotype.clone()
+                })
+                .unwrap()
         }
     }
 
