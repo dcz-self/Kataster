@@ -22,7 +22,7 @@ use bobox::RapierUtilsPlugin;
 use components::*;
 use debug::Plugin as DebugPlugin;
 use explosion::*;
-use laser::*;
+use laser as projectile;
 use paq::Paq;
 use player::*;
 use state::*;
@@ -63,8 +63,8 @@ fn main() {
 //        .add_system(player_dampening_system.system())
         .add_system(mob::expire.system())
         .add_system(mob::think.system())
-        .add_system(ship_cannon_system.system())
-        .add_system(despawn_laser_system.system())
+        .add_system(components::weapon_repeat.system())
+        .add_system(projectile::despawn_laser_system.system())
         .add_system(handle_explosion.system())
         .add_system(setup_arena.system())
         .add_system(arena_spawn.system())

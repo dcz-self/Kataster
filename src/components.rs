@@ -1,3 +1,5 @@
+use bevy::core::Time;
+use bevy::ecs::Res;
 use bevy::prelude::{ Entity, GlobalTransform, Mut, Quat, Query, Timer, Transform, Without, Vec3 };
 use bevy_rapier2d::na;
 use bevy_rapier2d::na::{ Point2, Rotation2, UnitComplex, Vector2 };
@@ -13,8 +15,6 @@ pub struct Borg {
     pub speed: f32,
     /// Ship life points
     pub life: u32,
-    /// Cannon auto-fire timer
-    pub cannon_timer: Timer,
 }
 pub type Ship = Borg;
 
@@ -73,6 +73,20 @@ impl Mob {
         &self.brain
     }
 }
+
+/// The entity is a weapon, and must have a Transform
+/// because it gives direction to projectiles.
+pub struct Weapon {
+    pub repeat_timer: Timer,
+}
+
+
+pub fn weapon_repeat(time: Res<Time>, mut weapons: Query<Mut<Weapon>>) {
+    for mut weapon in &mut weapons.iter_mut() {
+        weapon.repeat_timer.tick(time.delta_seconds);
+    }
+}
+
 
 pub struct Laser {
     pub despawn_timer: Timer,

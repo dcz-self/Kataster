@@ -12,8 +12,8 @@ use bevy_rapier2d::{
 };
 use bevy_rapier2d::na::{ Point2, Translation2, Vector2 };
 use super::arena;
-use super::components::{AttachedToEntity, Borg, LooksAt};
-use super::laser::*;
+use super::components::{AttachedToEntity, Borg, LooksAt, Weapon};
+use super::laser as projectile;
 use super::state::*;
 use super::START_LIFE;
 
@@ -47,7 +47,6 @@ pub fn spawn_player(
             rotation_speed: std::f32::consts::TAU,
             speed: 10.0,
             life: START_LIFE,
-            cannon_timer: Timer::from_seconds(0.2, false),
         })
         .with(body)
         .with(collider)
@@ -76,6 +75,9 @@ pub fn spawn_player(
             },
             material: materials.add(texture_handle.into()),
             ..Default::default()
+        })
+        .with(Weapon {
+            repeat_timer: Timer::from_seconds(0.2, false),
         })
         .with(AttachedToEntity(borg_entity))
         .with(LooksAt::default());
@@ -119,11 +121,6 @@ pub fn player_dampening_system(
     }
 }
 
-pub fn ship_cannon_system(time: Res<Time>, mut ship: Query<Mut<Borg>>) {
-    for mut ship in &mut ship.iter_mut() {
-        ship.cannon_timer.tick(time.delta_seconds);
-    }
-}
 
 pub fn point_at_mouse(
     cursor_moved: Res<Events<CursorMoved>>,
@@ -156,9 +153,9 @@ pub fn point_at_mouse(
 
 
 pub fn user_input_system(
-    commands: Commands,
+    mut commands: Commands,
     asset_server: Res<AssetServer>,
-    materials: ResMut<Assets<ColorMaterial>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
     audio_output: Res<Audio>,
     mut runstate: ResMut<RunState>,
     input: Res<Input<KeyCode>>,
@@ -166,6 +163,7 @@ pub fn user_input_system(
     mut bodies: ResMut<RigidBodySet>,
     mut app_exit_events: ResMut<Events<AppExit>>,
     mut query: Query<(&RigidBodyHandleComponent, Mut<Borg>)>,
+    mut weapons: Query<(&Transform, Mut<Weapon>)>,
 ) {
     if !runstate.gamestate.is(GameState::StartMenu) {
         if input.just_pressed(KeyCode::Back) {
@@ -206,11 +204,10 @@ pub fn user_input_system(
             }
         }
         if input.pressed(KeyCode::Space) {
-            if let Ok((body_handle, mut ship)) = query.get_mut(player) {
-                if ship.cannon_timer.finished {
-                    let body = bodies.get(body_handle.handle()).unwrap();
-                    spawn_laser(commands, body, asset_server, materials, audio_output);
-                    ship.cannon_timer.reset();
+            for (transform, mut weapon) in weapons.iter_mut() {
+                if weapon.repeat_timer.finished {
+                    projectile::spawn(&mut commands, &asset_server, &mut materials, &audio_output, transform);
+                    weapon.repeat_timer.reset();
                 }
             }
         }
