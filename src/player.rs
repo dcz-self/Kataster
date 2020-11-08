@@ -152,18 +152,32 @@ pub fn point_at_mouse(
 }
 
 
-pub fn user_input_system(
+pub fn mouse_shoot(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     audio_output: Res<Audio>,
+    mouse_button_input: Res<Input<MouseButton>>,
+    mut weapons: Query<(&Transform, Mut<Weapon>)>,
+) {
+    if mouse_button_input.pressed(MouseButton::Left) {
+        for (transform, mut weapon) in weapons.iter_mut() {
+            if weapon.repeat_timer.finished {
+                projectile::spawn(&mut commands, &asset_server, &mut materials, &audio_output, transform);
+                weapon.repeat_timer.reset();
+            }
+        }
+    }
+}
+
+
+pub fn user_input_system(
     mut runstate: ResMut<RunState>,
     input: Res<Input<KeyCode>>,
     mut rapier_configuration: ResMut<RapierConfiguration>,
     mut bodies: ResMut<RigidBodySet>,
     mut app_exit_events: ResMut<Events<AppExit>>,
     mut query: Query<(&RigidBodyHandleComponent, Mut<Borg>)>,
-    mut weapons: Query<(&Transform, Mut<Weapon>)>,
 ) {
     if !runstate.gamestate.is(GameState::StartMenu) {
         if input.just_pressed(KeyCode::Back) {
@@ -201,14 +215,6 @@ pub fn user_input_system(
                 velocity
             } else {
                 Vector2::zeros()
-            }
-        }
-        if input.pressed(KeyCode::Space) {
-            for (transform, mut weapon) in weapons.iter_mut() {
-                if weapon.repeat_timer.finished {
-                    projectile::spawn(&mut commands, &asset_server, &mut materials, &audio_output, transform);
-                    weapon.repeat_timer.reset();
-                }
             }
         }
         if input.just_pressed(KeyCode::Escape) {
