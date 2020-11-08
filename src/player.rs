@@ -51,7 +51,7 @@ pub fn spawn_player(
         .with(body)
         .with(collider)
         .with(ForStates {
-            states: vec![GameState::Game, GameState::Pause, GameState::GameOver],
+            states: vec![GameState::Game, GameState::Pause],
         })
         .with_children(|parent| {
             parent.spawn(SpriteComponents {
@@ -62,6 +62,8 @@ pub fn spawn_player(
                 },
                 material: materials.add(arrow.into()),
                 ..Default::default()
+            }).with(ForStates {
+                states: vec![GameState::Game, GameState::Pause],
             });
         });
     
@@ -80,7 +82,10 @@ pub fn spawn_player(
             repeat_timer: Timer::from_seconds(0.2, false),
         })
         .with(AttachedToEntity(borg_entity))
-        .with(LooksAt::default());
+        .with(LooksAt::default())
+        .with(ForStates {
+            states: vec![GameState::Game, GameState::Pause],
+        });
     runstate.player = Some(borg_entity);
 
     // Helper points to visualize some points in space for Collider
@@ -154,12 +159,16 @@ pub fn point_at_mouse(
 
 pub fn mouse_shoot(
     mut commands: Commands,
+    runstate: Res<RunState>,
     asset_server: Res<AssetServer>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     audio_output: Res<Audio>,
     mouse_button_input: Res<Input<MouseButton>>,
     mut weapons: Query<(&Transform, Mut<Weapon>)>,
 ) {
+    if !runstate.gamestate.is(GameState::Game) {
+        return;
+    }
     if mouse_button_input.pressed(MouseButton::Left) {
         for (transform, mut weapon) in weapons.iter_mut() {
             if weapon.repeat_timer.finished {

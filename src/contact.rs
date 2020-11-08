@@ -112,7 +112,7 @@ pub fn contact_system(
                             x: player_body.position.translation.x,
                             y: player_body.position.translation.y,
                         });
-                        commands.despawn(e1);
+                        commands.despawn_recursive(e1);
                         runstate.gamestate.transit_to(GameState::GameOver);
                     } else {
                         explosion_spawn_events.send(ExplosionSpawnEvent {
