@@ -14,10 +14,17 @@ use bevy_rapier2d::rapier::math::{ Isometry, Translation, Vector };
 use bevy_rapier2d::na::UnitComplex;
 
 
+/// 2d version
 fn into_isometry(translation: Vec3, rotation: Quat) -> Isometry<f32> {
+    let (axis, angle) = rotation.to_axis_angle();
+    let angle = match axis.z() > 0.0 {
+        true => angle,
+        false => -angle,
+    };
+        
     Isometry::from_parts(
         Translation::from(Vector::new(translation.x(), translation.y())),
-        UnitComplex::new(rotation.to_axis_angle().1),
+        UnitComplex::new(angle),
     )
 }
 
