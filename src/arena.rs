@@ -9,10 +9,14 @@ use bevy_rapier2d::{
     },
 };
 use rand::{thread_rng, Rng};
+use rand_distr::Poisson;
 use std::f32;
 use super::components::*;
 use super::player::*;
 use super::state::*;
+
+
+use rand_distr::Distribution;
 
 
 pub const WINDOW_WIDTH: u32 = 720;
@@ -23,8 +27,10 @@ pub const ARENA_HEIGHT: f32 = WINDOW_HEIGHT as f32 * CAMERA_SCALE;
 
 #[derive(Debug)]
 pub struct Arena {
-    pub asteroid_spawn_timer: Timer,
+    /// Kinda reflects how often mobs spawn.
+    pub mob_virility: f32,
 }
+
 pub fn setup_arena(
     commands: Commands,
     mut runstate: ResMut<RunState>,
@@ -36,7 +42,7 @@ pub fn setup_arena(
         .entering_not_from(GameState::Game, GameState::Pause)
     {
         runstate.arena = Some(Arena {
-            asteroid_spawn_timer: Timer::from_seconds(5.0, false),
+            mob_virility: 0.0,
         });
         runstate.score = Some(0);
         spawn_player(commands, runstate, asset_server, materials);
@@ -101,14 +107,15 @@ pub fn arena_spawn(
 ) {
     if runstate.gamestate.is(GameState::Game) {
         let mut arena = runstate.arena.as_mut().unwrap();
-        arena.asteroid_spawn_timer.tick(time.delta_seconds);
-        if arena.asteroid_spawn_timer.finished {
-            let n_asteroid = asteroids.iter().count();
-            arena.asteroid_spawn_timer.reset();
-            arena.asteroid_spawn_timer.duration =
-                0.9 * arena.asteroid_spawn_timer.duration;
-            let mut rng = thread_rng();
-            
+        arena.mob_virility += time.delta_seconds;
+        // Mobs per second. Double every 30sec.
+        let spawn_rate = 0.5 * (2.0f32).powf(arena.mob_virility / 30.0);
+        let expected_spawn_this_tick = time.delta_seconds * spawn_rate;
+        let dist = Poisson::new(expected_spawn_this_tick).unwrap();
+
+        let mut rng = thread_rng();
+        let count: u64 = dist.sample(&mut rng);
+        for mobs in 0..count {
             let x: f32 = rng.gen_range(-0.5, 0.5);
             let y: f32 = rng.gen_range(-0.5, 0.5);
             if x.abs() > 0.25 || y.abs() > 0.25 {

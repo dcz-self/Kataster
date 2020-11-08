@@ -10,12 +10,12 @@ edition = "2018"
 
 [dependencies]
 anyhow = "1.*"
-#bevy = { path = "../bevy" }
 bevy = "0.3.*"
 bevy_rapier2d = "0.5.*"
 byteorder = "1.*"
 image = "0.23.*"
 rand = "0.7.*"
+rand_distr = "0.2.*"
 serde = "*"
 
 #[patch.crates-io]
