@@ -69,8 +69,8 @@ impl GenePool {
     pub fn new_eden() -> GenePool {
         GenePool {
             genotypes: vec![
-                (Brain { weights: vec![f32::consts::TAU / 10.0, 1.0] }, 1.0), // Adam
-                (Brain { weights: vec![0.0, 1.0] }, 1.0),// Eve
+                //(Brain { weights: vec![f32::consts::TAU / 10.0, 1.0] }, 1.0), // Adam
+                //(Brain { weights: vec![0.0, 1.0] }, 1.0),// Eve
             ],
             blank_frequency: 0.1,
         }
@@ -78,13 +78,12 @@ impl GenePool {
 
     pub fn spawn(&mut self) -> Genotype {
         let blanks = Bernoulli::new(self.blank_frequency).unwrap();
-        if blanks.sample(&mut rand::thread_rng()) {
+        if blanks.sample(&mut rand::thread_rng()) || self.genotypes.is_empty() {
             Genotype::randomize()
         } else {
             let distribution = WeightedIndex::new(
                 self.genotypes.iter().map(|(_k, v)| v)
             ).unwrap();
-            
             self.genotypes
                 .get_mut(distribution.sample(&mut rand::thread_rng()))
                 .map(|(genotype, weight)| {
