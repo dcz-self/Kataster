@@ -97,7 +97,7 @@ pub fn setup(
 ) {
     commands
         .spawn(Camera2dComponents {
-            transform: Transform::from_scale(Vec3::new(CAMERA_SCALE, CAMERA_SCALE, CAMERA_SCALE)),
+            transform: Transform::from_scale(Vec3::splat(CAMERA_SCALE)),
             ..Default::default()
         })
         .spawn(UiCameraComponents::default());
@@ -108,7 +108,7 @@ pub fn setup(
     commands.spawn(SpriteComponents {
         transform: {
             Transform::from_translation(Vec3::new(0.0, 0.0, -10.0))
-                .mul_transform(Transform::from_scale(Vec3::new(CAMERA_SCALE, CAMERA_SCALE, CAMERA_SCALE)))
+                .mul_transform(Transform::from_scale(Vec3::splat(CAMERA_SCALE)))
         },
         material: materials.add(texture_handle.into()),
         ..Default::default()

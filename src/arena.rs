@@ -19,11 +19,14 @@ use super::state::*;
 use rand_distr::Distribution;
 
 
-pub const WINDOW_WIDTH: u32 = 720;
-pub const WINDOW_HEIGHT: u32 = 720;
-pub const CAMERA_SCALE: f32 = 0.1;
-pub const ARENA_WIDTH: f32 = WINDOW_WIDTH as f32 * CAMERA_SCALE;
-pub const ARENA_HEIGHT: f32 = WINDOW_HEIGHT as f32 * CAMERA_SCALE;
+/// Pixel perfect.
+pub const CAMERA_SCALE: f32 = 1.0;
+pub const ARENA_WIDTH: f32 = 640.0;
+pub const ARENA_HEIGHT: f32 = 640.0;
+/// See spawn zone or not?
+const MARGINS: f32 = 1.125;
+pub const WINDOW_WIDTH: u32 = (MARGINS * CAMERA_SCALE * ARENA_WIDTH) as u32;
+pub const WINDOW_HEIGHT: u32 = (MARGINS * CAMERA_SCALE * ARENA_HEIGHT) as u32;
 
 #[derive(Debug)]
 pub struct Arena {
