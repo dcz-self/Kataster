@@ -1,3 +1,10 @@
+/*! Monster operations */
+/*
+ Author: Dorota Czaplejewicz <gihuac.dcz@porcupinefactory.org>
+ SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+
+
 use bevy::prelude::{ Commands, Entity, Mut, Query, Res, ResMut, Time };
 use bevy_rapier2d::{
     physics::RigidBodyHandleComponent,

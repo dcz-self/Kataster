@@ -5,6 +5,7 @@ use bevy_rapier2d::physics::RapierPhysicsPlugin;
 
 mod arena;
 mod bobox;
+mod brain;
 mod components;
 mod contact;
 mod debug;
@@ -13,6 +14,7 @@ mod laser;
 mod mob;
 mod paq;
 mod player;
+mod shooter;
 mod state;
 mod tga;
 mod ui;
