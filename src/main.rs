@@ -58,8 +58,9 @@ fn main() {
         .add_stage_after("HANDLE_RUNSTATE", "CLEANUP") // CLEANUP stage required by RapierUtilsPlugin
         .add_plugin(RapierUtilsPlugin)
         .add_system(hold_player.system())
-        .add_system(user_input_system.system())
+        .add_system_to_stage(stage::POST_UPDATE, user_input_system.system())
         .add_system(player::point_at_mouse.system())
+        .add_system(player::keyboard_walk.system())
         .add_system_to_stage("FOLLOW", components::swivel_at.system())
         .add_system_to_stage("SHOOT", player::mouse_shoot.system())
 //        .add_system(player_dampening_system.system())

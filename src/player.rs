@@ -18,6 +18,10 @@ use super::state::*;
 use super::START_LIFE;
 
 
+/// Marks entities walking with the keyboard.
+pub struct KeyboardWalk;
+
+
 pub fn spawn_player(
     mut commands: Commands,
     mut runstate: ResMut<RunState>,
@@ -52,6 +56,7 @@ pub fn spawn_player(
         .with(ForStates {
             states: vec![GameState::Game, GameState::Pause],
         })
+        .with(KeyboardWalk)
         .with_children(|parent| {
             parent.spawn(SpriteComponents {
                 transform: Transform {
@@ -178,14 +183,49 @@ pub fn mouse_shoot(
     }
 }
 
+pub fn keyboard_walk(
+    input: Res<Input<KeyCode>>,
+    mut bodies: ResMut<RigidBodySet>,
+    query: Query<(&RigidBodyHandleComponent, &Borg, &KeyboardWalk)>,
+) {
+    let speed = if input.pressed(KeyCode::W) || input.pressed(KeyCode::Up) {
+        1
+    } else {
+        0
+    };
+    let rotation = if input.pressed(KeyCode::A) || input.pressed(KeyCode::Left) {
+        1
+    } else if input.pressed(KeyCode::D) || input.pressed(KeyCode::Right) {
+        -1
+    } else {
+        0
+    };
+    
+    for (body_handle, borg, _walk) in query.iter() {
+        let mut body = bodies.get_mut(body_handle.handle()).unwrap();
+        let rotation = rotation as f32 * borg.rotation_speed;
+        if rotation != body.angvel {
+            body.wake_up(true);
+            body.angvel = rotation;
+        }
+        // if neither rotation nor speed changed, can ignore
+        body.wake_up(true);
+        body.linvel = if speed != 0 {
+            let velocity = body.position.rotation.transform_vector(&Vector2::y())
+                * speed as f32
+                * borg.speed;
+            velocity
+        } else {
+            Vector2::zeros()
+        }
+    }
+}
 
 pub fn user_input_system(
     mut runstate: ResMut<RunState>,
     input: Res<Input<KeyCode>>,
     mut rapier_configuration: ResMut<RapierConfiguration>,
-    mut bodies: ResMut<RigidBodySet>,
     mut app_exit_events: ResMut<Events<AppExit>>,
-    mut query: Query<(&RigidBodyHandleComponent, Mut<Borg>)>,
 ) {
     if !runstate.gamestate.is(GameState::StartMenu) {
         if input.just_pressed(KeyCode::Back) {
@@ -193,38 +233,6 @@ pub fn user_input_system(
         }
     }
     if runstate.gamestate.is(GameState::Game) {
-        let speed = if input.pressed(KeyCode::W) || input.pressed(KeyCode::Up) {
-            1
-        } else {
-            0
-        };
-        let rotation = if input.pressed(KeyCode::A) || input.pressed(KeyCode::Left) {
-            1
-        } else if input.pressed(KeyCode::D) || input.pressed(KeyCode::Right) {
-            -1
-        } else {
-            0
-        };
-        
-        let player = runstate.player.unwrap();
-        if let Ok((body_handle, ship)) = query.get_mut(player) {
-            let mut body = bodies.get_mut(body_handle.handle()).unwrap();
-            let rotation = rotation as f32 * ship.rotation_speed;
-            if rotation != body.angvel {
-                body.wake_up(true);
-                body.angvel = rotation;
-            }
-            // if neither rotation nor speed changed, can ignore
-            body.wake_up(true);
-            body.linvel = if speed != 0 {
-                let velocity = body.position.rotation.transform_vector(&Vector2::y())
-                    * speed as f32
-                    * ship.speed;
-                velocity
-            } else {
-                Vector2::zeros()
-            }
-        }
         if input.just_pressed(KeyCode::Escape) {
             runstate.gamestate.transit_to(GameState::Pause);
             rapier_configuration.physics_pipeline_active = false;
