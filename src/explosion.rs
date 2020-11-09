@@ -49,7 +49,7 @@ pub fn spawn_explosion(
             .spawn(SpriteComponents {
                 transform: {
                     Transform::from_translation(Vec3::new(event.x, event.y, -1.0))
-                        .mul_transform(Transform::from_scale(Vec3::new(start_scale, start_scale, start_scale)))
+                        .mul_transform(Transform::from_scale(Vec3::splat(1.0 / 16.0)))
                 },
                 material: materials.add(texture_handle.into()),
                 ..Default::default()
@@ -77,11 +77,6 @@ pub fn handle_explosion(
         explosion.timer.tick(elapsed);
         if explosion.timer.finished {
             commands.despawn(entity);
-        } else {
-            transform.scale = Vec3::splat(
-                explosion.start_scale
-                    + (explosion.end_scale - explosion.start_scale)
-                    * (explosion.timer.elapsed / explosion.timer.duration));
         }
     }
 }

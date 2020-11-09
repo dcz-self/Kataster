@@ -38,7 +38,6 @@ pub fn spawn_player(
         .spawn(SpriteComponents {
             transform: Transform {
                 translation: Vec3::new(0.0, 0.0, -5.0),
-                scale: Vec3::splat(1.0 / 100.0),
                 ..Default::default()
             },
             ..Default::default()
@@ -56,8 +55,8 @@ pub fn spawn_player(
         .with_children(|parent| {
             parent.spawn(SpriteComponents {
                 transform: Transform {
-                    translation: Vec3::new(0.0, 1000.0, 0.0),
-                    scale: Vec3::splat(1.0/4.0),
+                    translation: Vec3::new(0.0, 100.0, 0.0),
+                    scale: Vec3::splat(1.0/32.0),
                     ..Default::default()
                 },
                 material: materials.add(arrow.into()),
@@ -72,7 +71,7 @@ pub fn spawn_player(
         .spawn(SpriteComponents {
             transform: Transform {
                 translation: Vec3::new(0.0, 0.0, 0.0),
-                scale: Vec3::splat(1.0/100.0),
+                scale: Vec3::splat(1.0/8.0),
                 ..Default::default()
             },
             material: materials.add(texture_handle.into()),

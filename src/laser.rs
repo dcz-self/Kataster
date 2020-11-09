@@ -51,7 +51,7 @@ pub fn spawn(
             transform.translation.y(),
             -4.0,
         ),
-        scale: Vec3::splat(1.0 / 18.0),
+        scale: Vec3::splat(1.0 / 2.0),
         ..Default::default()
     };
     commands

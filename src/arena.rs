@@ -68,21 +68,16 @@ pub fn spawn_asteroid_system(
         let texture_handle = asset_server.load("louse.png");
         let texture_atlas = TextureAtlas::from_grid(texture_handle, Vec2::new(64.0, 64.0), 1, 1);
         let texture_atlas_handle = texture_atlases.add(texture_atlas);
-        let radius = match event.size {
-            AsteroidSize::Big => 10.1 / 2.0,
-            AsteroidSize::Medium => 4.3 / 2.0,
-            AsteroidSize::Small => 2.8 / 2.0,
-        };
         let body = RigidBodyBuilder::new_dynamic()
             .translation(event.x, event.y);
-        let collider = ColliderBuilder::ball(radius).friction(-0.3);
+        let collider = ColliderBuilder::ball(16.0).friction(-0.3);
         commands
             .spawn(SpriteSheetComponents {
                 texture_atlas: texture_atlas_handle,
                 sprite: TextureAtlasSprite::new(0),
                 transform: {
                     Transform::from_translation(Vec3::new(event.x, event.y, -5.0))
-                        .mul_transform(Transform::from_scale(Vec3::splat(0.07)))
+                        .mul_transform(Transform::from_scale(Vec3::splat(0.5)))
                 },
                 ..Default::default()
             })
