@@ -1,12 +1,16 @@
+use bevy::asset::{ Assets, AssetServer };
+use bevy::audio::Audio;
 use bevy::core::Time;
-use bevy::ecs::Res;
+use bevy::ecs::{ Commands, Res, ResMut };
 use bevy::prelude::{ Entity, GlobalTransform, Mut, Quat, Query, Timer, Transform, Without, Vec3 };
+use bevy::sprite::ColorMaterial;
 use bevy_rapier2d::na;
 use bevy_rapier2d::na::{ Point2, Rotation2, UnitComplex, Vector2 };
 use super::mob;
+use super::laser as projectile;
+
 
 pub struct AttachedToEntity(pub Entity);
-
 
 pub struct Borg {
     /// Ship rotation speed in rad/s
@@ -84,6 +88,20 @@ pub struct Weapon {
 pub fn weapon_repeat(time: Res<Time>, mut weapons: Query<Mut<Weapon>>) {
     for mut weapon in &mut weapons.iter_mut() {
         weapon.repeat_timer.tick(time.delta_seconds);
+    }
+}
+
+pub fn weapon_trigger(
+    weapon: &mut Weapon,
+    transform: &Transform,
+    mut commands: &mut Commands,
+    asset_server: &Res<AssetServer>,
+    mut materials: &mut ResMut<Assets<ColorMaterial>>,
+    audio_output: &Res<Audio>,
+) {
+    if weapon.repeat_timer.finished {
+        projectile::spawn(&mut commands, &asset_server, &mut materials, &audio_output, transform);
+        weapon.repeat_timer.reset();
     }
 }
 

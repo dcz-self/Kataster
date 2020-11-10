@@ -117,8 +117,6 @@ impl GenePool {
 }
 
 pub fn think(
-    time: Res<Time>,
-    mut runstate: ResMut<RunState>,
     mut bodies: ResMut<RigidBodySet>,
     mobs: Query<(&RigidBodyHandleComponent, &Mob)>,
     borgs: Query<(&RigidBodyHandleComponent, &Borg)>,

@@ -10,6 +10,7 @@ mod components;
 mod contact;
 mod debug;
 mod explosion;
+mod geometry;
 mod laser;
 mod mob;
 mod paq;
@@ -25,7 +26,6 @@ use components::*;
 use debug::Plugin as DebugPlugin;
 use explosion::*;
 use laser as projectile;
-use paq::Paq;
 use player::*;
 use state::*;
 use ui::*;
@@ -67,7 +67,11 @@ fn main() {
         .add_system_to_stage("SHOOT", player::mouse_shoot.system())
 //        .add_system(player_dampening_system.system())
         .add_system(mob::expire.system())
+        // TODO: those should both operate on a copy of mob positions,
+        // otherwise one will use updated values.
+        // Maybe use Transform and update Body.
         .add_system(mob::think.system())
+        .add_system(shooter::think.system())
         .add_system(components::weapon_repeat.system())
         .add_system(projectile::despawn_laser_system.system())
         .add_system(handle_explosion.system())

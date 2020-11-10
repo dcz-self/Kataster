@@ -12,8 +12,7 @@ use bevy_rapier2d::{
 };
 use bevy_rapier2d::na::{ Point2, Translation2, Vector2 };
 use super::arena;
-use super::components::{AttachedToEntity, Borg, LooksAt, Weapon};
-use super::laser as projectile;
+use super::components::{weapon_trigger, AttachedToEntity, Borg, LooksAt, Weapon};
 use super::state::*;
 use super::START_LIFE;
 
@@ -175,10 +174,7 @@ pub fn mouse_shoot(
     }
     if mouse_button_input.pressed(MouseButton::Left) {
         for (transform, mut weapon) in weapons.iter_mut() {
-            if weapon.repeat_timer.finished {
-                projectile::spawn(&mut commands, &asset_server, &mut materials, &audio_output, transform);
-                weapon.repeat_timer.reset();
-            }
+            weapon_trigger(&mut weapon, transform, &mut commands, &asset_server, &mut materials, &audio_output);
         }
     }
 }

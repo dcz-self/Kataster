@@ -70,10 +70,10 @@ pub fn spawn_explosion(
 pub fn handle_explosion(
     mut commands: Commands,
     time: Res<Time>,
-    mut query: Query<(Entity, Mut<Transform>, Mut<Explosion>)>,
+    mut query: Query<(Entity, &Transform, Mut<Explosion>)>,
 ) {
     let elapsed = time.delta_seconds;
-    for (entity, mut transform, mut explosion) in &mut query.iter_mut() {
+    for (entity, transform, mut explosion) in &mut query.iter_mut() {
         explosion.timer.tick(elapsed);
         if explosion.timer.finished {
             commands.despawn(entity);
