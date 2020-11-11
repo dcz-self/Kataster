@@ -16,23 +16,6 @@ use super::state::*;
 pub struct KeyboardWalk;
 
 
-pub fn player_dampening_system(
-    time: Res<Time>,
-    runstate: Res<RunState>,
-    mut bodies: ResMut<RigidBodySet>,
-    query: Query<&RigidBodyHandleComponent>,
-) {
-    if runstate.gamestate.is(GameState::Game) {
-        if let Ok(body_handle) = query.get(runstate.player.unwrap()) {
-            let elapsed = time.delta_seconds;
-            let mut body = bodies.get_mut(body_handle.handle()).unwrap();
-            body.angvel = body.angvel * 0.001f32.powf(elapsed);
-            body.linvel = body.linvel * 0.01f32.powf(elapsed);
-        }
-    }
-}
-
-
 pub fn point_at_mouse(
     cursor_moved: Res<Events<CursorMoved>>,
     mut looks_at: Mut<LooksAt>,
