@@ -66,8 +66,6 @@ fn main() {
         .add_system(player::keyboard_walk.system())
         .add_system_to_stage("FOLLOW", components::swivel_at.system())
         .add_system_to_stage("SHOOT", player::mouse_shoot.system())
-//        .add_system(player_dampening_system.system())
-        .add_system(mob::expire.system())
         // TODO: those should both operate on a copy of mob positions,
         // otherwise one will use updated values.
         // Maybe use Transform and update Body.

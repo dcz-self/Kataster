@@ -35,13 +35,19 @@ fn process_layer(neurons: &[Neuron], mut inputs: Vec<f32>) -> Vec<f32> {
     neurons.iter().map(|n| n.feed(&inputs)).collect()
 }
 
-/// Does nothing
-/// Hardly even a neuron
-fn dumb_neuron(synapse_count: u8) -> Neuron {
+
+fn unconnected_neuron(synapse_count: u8) -> Neuron {
     Neuron {
         weights: (0..synapse_count).map(|_| 0.0).collect(),
         activation: Function::Linear,
     }
+}
+
+/// Does as little as possible while staying connected.
+fn dumb_neuron(synapse_count: u8) -> Neuron {
+    let mut n = unconnected_neuron(synapse_count);
+    n.weights[0] = 0.01;
+    n
 }
 
 
@@ -56,7 +62,15 @@ pub struct Brain {
 impl Brain {
     pub fn new_dumb(hidden_neurons: u8) -> Brain {
         Brain {
-            hidden_layer: (0..hidden_neurons).map(|_| dumb_neuron(INPUT_COUNT + 1)).collect(),
+            hidden_layer: {
+                // Seed the layer with at least one connection.
+                vec![dumb_neuron(INPUT_COUNT + 1)].into_iter()
+                    .chain(
+                        (1..hidden_neurons)
+                            .map(|_| unconnected_neuron(INPUT_COUNT + 1))
+                    )
+                    .collect()
+            },
             output_layer: [dumb_neuron(hidden_neurons + 1)],
         }
     }
@@ -92,6 +106,7 @@ impl brain::Brain for Brain {
             for mut neuron in layer {
                 for mut weight in neuron.weights.iter_mut() {
                     *weight = if rng.sample(&connect_dist) {
+                        println!("Connect");
                         if weight == &0.0 {
                             rng.sample::<f32, _>(StandardNormal) * weight_deviation
                         } else {
@@ -206,14 +221,17 @@ impl GenePool {
         let distribution = WeightedIndex::new(
             self.genotypes.iter().map(|(_k, v)| v)
         ).unwrap();
+        let index = distribution.sample(&mut rand::thread_rng());
+        println!("Spawn offspring of {}", index);
         self.genotypes
-            .get(distribution.sample(&mut rand::thread_rng()))
+            .get(index)
             .map(|(genotype, chance)| genotype.clone())
             .unwrap()
-            .mutate(0.5)
+            .mutate(0.2)
     }
 
     pub fn preserve(&mut self, genotype: Genotype, fitness: f64) {
+        println!("Preserving {}: {}", self.genotypes.len(), fitness);
         self.genotypes.push((genotype, fitness));
     }
 }

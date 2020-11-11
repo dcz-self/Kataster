@@ -63,8 +63,7 @@ pub enum AsteroidSize {
 }
 pub struct Mob {
     pub size: AsteroidSize,
-    /// Despawn when expired
-    pub lifeforce: Timer,
+    pub life: u32,
     pub brain: mob::Brain,
     /// Max rotation speed in rad/s
     pub rotation_speed: f32,

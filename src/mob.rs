@@ -109,11 +109,6 @@ impl GenePool {
             None => self.genotypes.push((genotype, 1.0)),
         };
     }
-
-    // Calculate the variance of each element in the genotype
-    pub fn get_variances(&self) -> Variances {
-        panic!()
-    }
 }
 
 pub fn think(
@@ -148,21 +143,6 @@ pub fn think(
     }
 }
 
-pub fn expire(
-    mut commands: Commands,
-    runstate: Res<RunState>,
-    time: Res<Time>,
-    mut query: Query<(Entity, Mut<Mob>)>,
-) {
-    if runstate.gamestate.is(GameState::Game) {
-        for (entity, mut mob) in &mut query.iter_mut() {
-            mob.lifeforce.tick(time.delta_seconds);
-            if mob.lifeforce.finished {
-                commands.despawn(entity);
-            }
-        }
-    }
-}
 
 pub fn count_lifetime(
     runstate: Res<RunState>,

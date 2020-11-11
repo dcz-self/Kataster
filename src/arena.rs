@@ -105,10 +105,12 @@ fn spawn_borg(
                 states: vec![GameState::Game, GameState::Pause],
             });
         });
-        
+
+    let genotype = runstate.shooter_gene_pool.spawn();
+    println!("Spawned genotype {:#?}", genotype);
     match control {
         ControlledBy::Player => commands.with(KeyboardWalk),
-        ControlledBy::AI => commands.with(runstate.shooter_gene_pool.spawn()),
+        ControlledBy::AI => commands.with(genotype),
     };
     
     let borg_entity = commands.current_entity().unwrap();
@@ -124,7 +126,7 @@ fn spawn_borg(
             ..Default::default()
         })
         .with(Weapon {
-            repeat_timer: Timer::from_seconds(0.2, false),
+            repeat_timer: Timer::from_seconds(0.5, false),
         })
         .with(AttachedToEntity(borg_entity))
         .with(ForStates {
@@ -159,7 +161,7 @@ pub fn spawn_asteroid_system(
         let texture_atlas_handle = texture_atlases.add(texture_atlas);
         let body = RigidBodyBuilder::new_dynamic()
             .translation(event.x, event.y);
-        let collider = ColliderBuilder::ball(16.0).friction(-0.3);
+        let collider = ColliderBuilder::ball(6.0).friction(-0.3);
         commands
             .spawn(SpriteSheetComponents {
                 texture_atlas: texture_atlas_handle,
@@ -170,12 +172,12 @@ pub fn spawn_asteroid_system(
                 },
                 ..Default::default()
             })
-            .with(Asteroid {
+            .with(Mob {
                 size: event.size,
-                lifeforce: Timer::from_seconds(10.0, false),
+                life: 1,
                 brain: event.brain.clone(),
                 rotation_speed: f32::consts::TAU / 4.0,
-                speed: 4.0,
+                speed: 30.0,
             })
             .with(Damage { value: 1 })
             .with(body)
