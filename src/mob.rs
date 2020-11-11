@@ -163,3 +163,20 @@ pub fn expire(
         }
     }
 }
+
+pub fn count_lifetime(
+    runstate: Res<RunState>,
+    time: Res<Time>,
+    mut query: Query<Mut<Borg>>,
+) {
+    if !runstate.gamestate.is(GameState::Game) {
+        return;
+    }
+    
+    // FIXME: This is kind of inaccurate:
+    // the delta when pausing will be different than unpausing.
+    // Maybe switch to a constant tick.
+    for mut borg in &mut query.iter_mut() {
+        borg.time_alive += time.delta_seconds;
+    }
+}

@@ -85,6 +85,7 @@ fn spawn_borg(
             rotation_speed: std::f32::consts::TAU,
             speed: 10.0,
             life: START_LIFE,
+            time_alive: 0.0,
         })
         .with(body)
         .with(collider)
@@ -107,7 +108,7 @@ fn spawn_borg(
         
     match control {
         ControlledBy::Player => commands.with(KeyboardWalk),
-        ControlledBy::AI => commands.with(shooter::Brain::new_dumb(3)), // TODO: use gene pool
+        ControlledBy::AI => commands.with(runstate.shooter_gene_pool.spawn()), // TODO: use gene pool
     };
     
     let borg_entity = commands.current_entity().unwrap();
@@ -209,7 +210,7 @@ pub fn arena_spawn(
                     size: AsteroidSize::Small,
                     x: x * ARENA_WIDTH,
                     y: y * ARENA_HEIGHT,
-                    brain: runstate.gene_pool.spawn(),
+                    brain: runstate.mob_gene_pool.spawn(),
                 });
             }
         }

@@ -15,12 +15,17 @@ use bevy_rapier2d::{
     physics::RigidBodyHandleComponent,
     rapier::dynamics::RigidBodySet,
 };
+use rand::distributions::{ Bernoulli, WeightedIndex };
+use rand_distr::StandardNormal;
 use super::brain;
 use super::brain::{ Function, Neuron };
 use super::components::{ weapon_trigger, AttachedToEntity, Borg, LooksAt, Mob, Weapon };
 use super::geometry::{ angle_from, get_nearest };
 
 
+use rand::Rng;
+use rand::distributions::Distribution;
+use rand::seq::IteratorRandom;
 use super::brain::Brain as _;
 
 
@@ -70,8 +75,43 @@ impl brain::Brain for Brain {
             aim_rel_angle: outputs[0],
         }
     }
-    fn mutate(self, strength: f32) -> Brain {
-        // FIXME
+
+    fn mutate(mut self, strength: f64) -> Brain {
+        let weight_deviation = 5.0;
+        let weight_rate = 1.0;
+        let weight_dist = Bernoulli::new(strength * weight_rate).unwrap();
+        let connect_rate = 0.1;
+        let connect_dist = Bernoulli::new(strength * connect_rate).unwrap();
+        let activation_rate = 0.25;
+        let activation_dist = Bernoulli::new(strength * activation_rate).unwrap();
+        let activation_options = [Function::Linear, Function::Step01, Function::Gaussian, Function::ReLU, Function::Logistic];
+        let mut rng = rand::thread_rng();
+
+        let mut mutate_layer = |mut layer: &mut [Neuron]| {
+            for mut neuron in layer {
+                for mut weight in neuron.weights.iter_mut() {
+                    *weight = if rng.sample(&connect_dist) {
+                        if weight == &0.0 {
+                            rng.sample::<f32, _>(StandardNormal) * weight_deviation
+                        } else {
+                            0.0
+                        }
+                    } else {
+                        if rng.sample(&weight_dist) {
+                            *weight + rng.sample::<f32, _>(StandardNormal) * weight_deviation
+                        } else {
+                            *weight
+                        }
+                    }
+                }
+                if rng.sample(&activation_dist) {
+                    neuron.activation = activation_options.iter().choose(&mut rng).unwrap().clone();
+                }
+            }
+        };
+
+        mutate_layer(&mut self.hidden_layer);
+        mutate_layer(&mut self.output_layer);
         self
     }
 }
@@ -135,5 +175,44 @@ pub fn think(
                 weapon_trigger(&mut weapon, &transform, &mut commands, &asset_server, &mut materials, &audio_output);
             }
         }
+    }
+}
+
+type Genotype = Brain;
+
+/// Second iteration.
+/// Let's experiment with keeping Adam and Eve as a regular genotype,
+/// as opposed to a spawn rate.
+/// It will bias Adam/Eve to breed more often in the beginning of training.
+#[derive(Debug)]
+pub struct GenePool {
+    /// Mapping: breeding genotype, spawn rate
+    /// Spawn rate should be derived from objective success
+    /// In this case, it's seconds of survival
+    genotypes: Vec<(Genotype, f64)>,
+}
+
+impl GenePool {
+    pub fn new_eden() -> GenePool {
+        GenePool {
+            genotypes: vec![
+                (Brain::new_dumb(3), 10.0), // High rate of initial breeding to Adam/Eve
+            ],
+        }
+    }
+
+    pub fn spawn(&mut self) -> Genotype {
+        let distribution = WeightedIndex::new(
+            self.genotypes.iter().map(|(_k, v)| v)
+        ).unwrap();
+        self.genotypes
+            .get(distribution.sample(&mut rand::thread_rng()))
+            .map(|(genotype, chance)| genotype.clone())
+            .unwrap()
+            .mutate(0.05)
+    }
+
+    pub fn preserve(&mut self, genotype: Genotype, fitness: f64) {
+        self.genotypes.push((genotype, fitness));
     }
 }

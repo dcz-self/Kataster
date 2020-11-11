@@ -19,6 +19,7 @@ pub struct Borg {
     pub speed: f32,
     /// Ship life points
     pub life: u32,
+    pub time_alive: f32,
 }
 pub type Ship = Borg;
 

@@ -103,10 +103,10 @@ pub fn contact_system(
                                 .handle(),
                         )
                         .unwrap();
-                    let mut ship = ships.get_mut(e1).unwrap();
+                    let mut borg = ships.get_mut(e1).unwrap();
                     let damage = damages.get(e2).unwrap();
-                    ship.life -= damage.value;
-                    if ship.life <= 0 {
+                    borg.life -= damage.value;
+                    if borg.life <= 0 {
                         explosion_spawn_events.send(ExplosionSpawnEvent {
                             kind: ExplosionKind::ShipDead,
                             x: player_body.position.translation.x,
@@ -122,7 +122,7 @@ pub fn contact_system(
                         });
                     }
                     let mob = mobs.get_mut(e2).unwrap();
-                    runstate.gene_pool.preserve(mob.genotype().clone());
+                    runstate.mob_gene_pool.preserve(mob.genotype().clone());
                     commands.despawn(e2);
                 }
             }

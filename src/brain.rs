@@ -11,7 +11,7 @@ pub trait Brain {
     type Outputs;
     fn process(&mut self, inputs: Self::Inputs) -> Self::Outputs;
     /// Randomly alter itself, according to some abstract strength value
-    fn mutate(self, strength: f32) -> Self;
+    fn mutate(self, strength: f64) -> Self;
 }
 
 
