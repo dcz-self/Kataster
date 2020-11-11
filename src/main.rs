@@ -29,7 +29,7 @@ use laser as projectile;
 use player::*;
 use state::*;
 use ui::*;
-const START_LIFE: u32 = 3;
+
 
 fn main() {
     App::build()

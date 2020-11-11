@@ -48,7 +48,7 @@ pub struct Brain {
 }
 
 impl Brain {
-    fn new_dumb(hidden_neurons: u8) -> Brain {
+    pub fn new_dumb(hidden_neurons: u8) -> Brain {
         Brain {
             hidden_layer: (0..hidden_neurons).map(|_| dumb_neuron(INPUT_COUNT + 1)).collect(),
             output_layer: [dumb_neuron(hidden_neurons)],

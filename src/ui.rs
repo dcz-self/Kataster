@@ -1,6 +1,6 @@
+use super::arena::START_LIFE;
 use super::components::*;
 use super::state::*;
-use super::START_LIFE;
 use bevy::prelude::*;
 
 pub struct DrawBlinkTimer(pub Timer);

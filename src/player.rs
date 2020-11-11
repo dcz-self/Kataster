@@ -4,114 +4,17 @@ use bevy::prelude::{ EventReader, KeyCode };
 use bevy::window::CursorMoved;
 use bevy_rapier2d::{
     physics::{RapierConfiguration, RigidBodyHandleComponent},
-    rapier::{
-        dynamics::{RigidBodyBuilder, RigidBodySet},
-        geometry::ColliderBuilder,
-        //        math::Point,
-    },
+    rapier::dynamics::RigidBodySet,
 };
 use bevy_rapier2d::na::{ Point2, Translation2, Vector2 };
 use super::arena;
-use super::components::{weapon_trigger, AttachedToEntity, Borg, LooksAt, Weapon};
+use super::components::{weapon_trigger, Borg, LooksAt, Weapon};
 use super::state::*;
-use super::START_LIFE;
 
 
 /// Marks entities walking with the keyboard.
 pub struct KeyboardWalk;
 
-
-pub fn spawn_player(
-    mut commands: Commands,
-    mut runstate: ResMut<RunState>,
-    asset_server: Res<AssetServer>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-) {
-    let texture_handle = asset_server.load("survivor-shoot_rifle_0.png");
-    let arrow = asset_server.load("arrow.png");
-    let body = RigidBodyBuilder::new_dynamic();
-    let collider = ColliderBuilder::ball(1.0);
-    // The triangle Collider does not compute mass
-    //let collider = ColliderBuilder::triangle(
-    //    Point::new(1.0, -0.5),
-    //    Point::new(0.0, 0.8),
-    //    Point::new(-1.0, -0.5),
-    //);
-    commands
-        .spawn(SpriteComponents {
-            transform: Transform {
-                translation: Vec3::new(0.0, 0.0, -5.0),
-                ..Default::default()
-            },
-            ..Default::default()
-        })
-        .with(Borg {
-            rotation_speed: std::f32::consts::TAU,
-            speed: 10.0,
-            life: START_LIFE,
-        })
-        .with(body)
-        .with(collider)
-        .with(ForStates {
-            states: vec![GameState::Game, GameState::Pause],
-        })
-        .with(KeyboardWalk)
-        .with_children(|parent| {
-            parent.spawn(SpriteComponents {
-                transform: Transform {
-                    translation: Vec3::new(0.0, 100.0, 0.0),
-                    scale: Vec3::splat(1.0/32.0),
-                    ..Default::default()
-                },
-                material: materials.add(arrow.into()),
-                ..Default::default()
-            }).with(ForStates {
-                states: vec![GameState::Game, GameState::Pause],
-            });
-        });
-    
-    let borg_entity = commands.current_entity().unwrap();
-    commands
-        .spawn(SpriteComponents {
-            transform: Transform {
-                translation: Vec3::new(0.0, 0.0, 0.0),
-                scale: Vec3::splat(1.0/8.0),
-                ..Default::default()
-            },
-            material: materials.add(texture_handle.into()),
-            ..Default::default()
-        })
-        .with(Weapon {
-            repeat_timer: Timer::from_seconds(0.2, false),
-        })
-        .with(AttachedToEntity(borg_entity))
-        .with(LooksAt::default())
-        .with(ForStates {
-            states: vec![GameState::Game, GameState::Pause],
-        });
-    runstate.player = Some(borg_entity);
-
-    // Helper points to visualize some points in space for Collider
-    //commands
-    //    .spawn(SpriteComponents {
-    //        translation: Translation::new(1.2, -1.0, 2.0),
-    //        material: materials.add(texture_handle.into()),
-    //        scale: Scale(0.001),
-    //        ..Default::default()
-    //    })
-    //    .spawn(SpriteComponents {
-    //        translation: Translation::new(0.0, 1.0, 2.0),
-    //        material: materials.add(texture_handle.into()),
-    //        scale: Scale(0.001),
-    //        ..Default::default()
-    //    })
-    //    .spawn(SpriteComponents {
-    //        translation: Translation::new(-1.2, -1.0, 2.0),
-    //        material: materials.add(texture_handle.into()),
-    //        scale: Scale(0.001),
-    //        ..Default::default()
-    //    });
-}
 
 pub fn player_dampening_system(
     time: Res<Time>,

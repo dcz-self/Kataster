@@ -13,6 +13,7 @@ use rand_distr::Poisson;
 use std::f32;
 use super::components::*;
 use super::player::*;
+use super::shooter;
 use super::state::*;
 
 
@@ -27,6 +28,14 @@ pub const ARENA_HEIGHT: f32 = 640.0;
 const MARGINS: f32 = 1.125;
 pub const WINDOW_WIDTH: u32 = (MARGINS * CAMERA_SCALE * ARENA_WIDTH) as u32;
 pub const WINDOW_HEIGHT: u32 = (MARGINS * CAMERA_SCALE * ARENA_HEIGHT) as u32;
+
+pub const START_LIFE: u32 = 3;
+
+
+pub enum ControlledBy {
+    Player,
+    AI,
+}
 
 #[derive(Debug)]
 pub struct Arena {
@@ -48,9 +57,88 @@ pub fn setup_arena(
             mob_virility: 0.0,
         });
         runstate.score = Some(0);
-        spawn_player(commands, runstate, asset_server, materials);
+        spawn_borg(commands, runstate, asset_server, materials, ControlledBy::Player);
     }
 }
+
+fn spawn_borg(
+    mut commands: Commands,
+    mut runstate: ResMut<RunState>,
+    asset_server: Res<AssetServer>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    control: ControlledBy,
+) {
+    let texture_handle = asset_server.load("survivor-shoot_rifle_0.png");
+    let arrow = asset_server.load("arrow.png");
+    let body = RigidBodyBuilder::new_dynamic();
+    let collider = ColliderBuilder::ball(1.0);
+
+    commands
+        .spawn(SpriteComponents {
+            transform: Transform {
+                translation: Vec3::new(0.0, 0.0, -5.0),
+                ..Default::default()
+            },
+            ..Default::default()
+        })
+        .with(Borg {
+            rotation_speed: std::f32::consts::TAU,
+            speed: 10.0,
+            life: START_LIFE,
+        })
+        .with(body)
+        .with(collider)
+        .with(ForStates {
+            states: vec![GameState::Game, GameState::Pause],
+        })
+        .with_children(|parent| {
+            parent.spawn(SpriteComponents {
+                transform: Transform {
+                    translation: Vec3::new(0.0, 100.0, 0.0),
+                    scale: Vec3::splat(1.0/32.0),
+                    ..Default::default()
+                },
+                material: materials.add(arrow.into()),
+                ..Default::default()
+            }).with(ForStates {
+                states: vec![GameState::Game, GameState::Pause],
+            });
+        });
+        
+    match control {
+        ControlledBy::Player => commands.with(KeyboardWalk),
+        ControlledBy::AI => commands.with(shooter::Brain::new_dumb(3)), // TODO: use gene pool
+    };
+    
+    let borg_entity = commands.current_entity().unwrap();
+
+    commands
+        .spawn(SpriteComponents {
+            transform: Transform {
+                translation: Vec3::new(0.0, 0.0, 0.0),
+                scale: Vec3::splat(1.0/8.0),
+                ..Default::default()
+            },
+            material: materials.add(texture_handle.into()),
+            ..Default::default()
+        })
+        .with(Weapon {
+            repeat_timer: Timer::from_seconds(0.2, false),
+        })
+        .with(AttachedToEntity(borg_entity))
+        .with(ForStates {
+            states: vec![GameState::Game, GameState::Pause],
+        });
+
+    match control {
+        ControlledBy::Player => {
+            commands.with(LooksAt::default());
+            runstate.player = Some(borg_entity);
+        },
+        _ => {},
+    }
+}
+
 
 #[derive(Default)]
 pub struct SpawnAsteroidState {
