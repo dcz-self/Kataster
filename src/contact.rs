@@ -1,3 +1,4 @@
+use bevy::ecs::QueryError;
 use bevy::prelude::*;
 use bevy_rapier2d::{
     physics::{EventQueue, RigidBodyHandleComponent},
@@ -7,7 +8,9 @@ use bevy_rapier2d::{
     },
 };
 use super::bobox::BodyHandleToEntity;
+use super::components::Borg;
 use super::components::*;
+use super::shooter;
 use super::state::*;
 
 
@@ -25,7 +28,8 @@ pub fn contact_system(
     bh_to_e: Res<BodyHandleToEntity>,
     bodies: ResMut<RigidBodySet>,
     damages: Query<&Damage>,
-    mut ships: Query<Mut<Ship>>,
+    genotypes: Query<&shooter::Genotype>,
+    mut ships: Query<Mut<Borg>>,
     mut lasers: Query<Mut<Laser>>,
     mut mobs: Query<Mut<Mob>>,
     handles: Query<&RigidBodyHandleComponent>,
@@ -113,6 +117,16 @@ pub fn contact_system(
                             y: player_body.position.translation.y,
                         });
                         commands.despawn_recursive(e1);
+                        // FIXME: despawn LookAts
+                        // This is kind of flaky... There could be a separate system to catch brainful despawns.
+                        match genotypes.get(e1) {
+                            Ok(genotype) => runstate.shooter_gene_pool.preserve(
+                                genotype.clone(),
+                                borg.time_alive as f64,
+                            ),
+                            Err(QueryError::NoSuchEntity) => {},
+                            Err(e) => println!("Borg unuseable genotype {:?}", e),
+                        }
                         runstate.gamestate.transit_to(GameState::GameOver);
                     } else {
                         explosion_spawn_events.send(ExplosionSpawnEvent {

@@ -108,7 +108,7 @@ fn spawn_borg(
         
     match control {
         ControlledBy::Player => commands.with(KeyboardWalk),
-        ControlledBy::AI => commands.with(runstate.shooter_gene_pool.spawn()), // TODO: use gene pool
+        ControlledBy::AI => commands.with(runstate.shooter_gene_pool.spawn()),
     };
     
     let borg_entity = commands.current_entity().unwrap();

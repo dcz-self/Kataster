@@ -178,7 +178,7 @@ pub fn think(
     }
 }
 
-type Genotype = Brain;
+pub type Genotype = Brain;
 
 /// Second iteration.
 /// Let's experiment with keeping Adam and Eve as a regular genotype,
