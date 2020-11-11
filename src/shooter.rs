@@ -210,7 +210,7 @@ impl GenePool {
             .get(distribution.sample(&mut rand::thread_rng()))
             .map(|(genotype, chance)| genotype.clone())
             .unwrap()
-            .mutate(0.05)
+            .mutate(0.5)
     }
 
     pub fn preserve(&mut self, genotype: Genotype, fitness: f64) {
