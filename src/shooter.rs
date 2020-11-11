@@ -30,7 +30,8 @@ use super::brain::Brain as _;
 
 
 /// Process a fully connected layer
-fn process_layer(neurons: &[Neuron], inputs: Vec<f32>) -> Vec<f32> {
+fn process_layer(neurons: &[Neuron], mut inputs: Vec<f32>) -> Vec<f32> {
+    inputs.push(1.0);
     neurons.iter().map(|n| n.feed(&inputs)).collect()
 }
 
@@ -56,7 +57,7 @@ impl Brain {
     pub fn new_dumb(hidden_neurons: u8) -> Brain {
         Brain {
             hidden_layer: (0..hidden_neurons).map(|_| dumb_neuron(INPUT_COUNT + 1)).collect(),
-            output_layer: [dumb_neuron(hidden_neurons)],
+            output_layer: [dumb_neuron(hidden_neurons + 1)],
         }
     }
 }
