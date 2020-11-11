@@ -57,7 +57,7 @@ pub fn setup_arena(
             mob_virility: 0.0,
         });
         runstate.score = Some(0);
-        spawn_borg(commands, runstate, asset_server, materials, ControlledBy::Player);
+        spawn_borg(commands, runstate, asset_server, materials, ControlledBy::AI);
     }
 }
 
@@ -216,47 +216,48 @@ pub fn arena_spawn(
     }
 }
 
-pub fn hold_player(
+pub fn hold_borgs(
     runstate: Res<RunState>,
     mut bodies: ResMut<RigidBodySet>,
-    query: Query<&RigidBodyHandleComponent>,
+    query: Query<(&RigidBodyHandleComponent, &Borg)>,
 ) {
-    if runstate.gamestate.is(GameState::Game) {
-        if let Ok(body_handle) = query.get(runstate.player.unwrap()) {
-            let mut body = bodies.get_mut(body_handle.handle()).unwrap();
-            let mut x = body.position.translation.vector.x;
-            let mut y = body.position.translation.vector.y;
-            let mut xvel = body.linvel.x;
-            let mut yvel = body.linvel.y;
-            let mut updated = false;
-            // Stop at screen edges
-            let half_width = ARENA_WIDTH / 2.0;
-            let half_height = ARENA_HEIGHT / 2.0;
-            if x < -half_width && xvel < 0.0 {
-                x = -half_width;
-                xvel = 0.0;
-                updated = true;
-            } else if x > half_width && xvel > 0.0 {
-                x = half_width;
-                xvel = 0.0;
-                updated = true;
-            }
-            if y < -half_height && yvel < 0.0 {
-                y = -half_height;
-                updated = true;
-                yvel = 0.0;
-            } else if y > half_height && yvel > 0.0 {
-                y = half_height;
-                updated = true;
-                yvel = 0.0;
-            }
-            if updated {
-                let mut new_position = body.position.clone();
-                new_position.translation.vector.x = x;
-                new_position.translation.vector.y = y;
-                body.linvel = Vector::new(xvel, yvel);
-                body.set_position(new_position);
-            }
+    if !runstate.gamestate.is(GameState::Game) {
+        return;
+    }
+    for (body_handle, _borg) in query.iter() {
+        let mut body = bodies.get_mut(body_handle.handle()).unwrap();
+        let mut x = body.position.translation.vector.x;
+        let mut y = body.position.translation.vector.y;
+        let mut xvel = body.linvel.x;
+        let mut yvel = body.linvel.y;
+        let mut updated = false;
+        // Stop at screen edges
+        let half_width = ARENA_WIDTH / 2.0;
+        let half_height = ARENA_HEIGHT / 2.0;
+        if x < -half_width && xvel < 0.0 {
+            x = -half_width;
+            xvel = 0.0;
+            updated = true;
+        } else if x > half_width && xvel > 0.0 {
+            x = half_width;
+            xvel = 0.0;
+            updated = true;
+        }
+        if y < -half_height && yvel < 0.0 {
+            y = -half_height;
+            updated = true;
+            yvel = 0.0;
+        } else if y > half_height && yvel > 0.0 {
+            y = half_height;
+            updated = true;
+            yvel = 0.0;
+        }
+        if updated {
+            let mut new_position = body.position.clone();
+            new_position.translation.vector.x = x;
+            new_position.translation.vector.y = y;
+            body.linvel = Vector::new(xvel, yvel);
+            body.set_position(new_position);
         }
     }
 }
