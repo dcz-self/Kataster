@@ -16,6 +16,7 @@ use bevy_rapier2d::{
 };
 use rand::distributions::{ Bernoulli, WeightedIndex };
 use rand_distr::StandardNormal;
+use std::cmp::Ordering;
 use super::assets;
 use super::brain;
 use super::brain::{ Function, Neuron };
@@ -196,16 +197,19 @@ pub fn think(
 
 pub type Genotype = Brain;
 
-/// Second iteration.
+/// Third iteration.
 /// Let's experiment with keeping Adam and Eve as a regular genotype,
 /// as opposed to a spawn rate.
 /// It will bias Adam/Eve to breed more often in the beginning of training.
+/// Remove all below average genotypes once the generation size is reached.
+/// That becomes the new generation size.
 #[derive(Debug)]
 pub struct GenePool {
     /// Mapping: breeding genotype, spawn rate
     /// Spawn rate should be derived from objective success
     /// In this case, it's seconds of survival
     genotypes: Vec<(Genotype, f64)>,
+    generation_size: usize,
 }
 
 impl GenePool {
@@ -214,10 +218,11 @@ impl GenePool {
             genotypes: vec![
                 (Brain::new_dumb(3), 10.0), // High rate of initial breeding to Adam/Eve
             ],
+            generation_size: 4,
         }
     }
 
-    pub fn spawn(&mut self) -> Genotype {
+    pub fn spawn(&self) -> Genotype {
         let distribution = WeightedIndex::new(
             self.genotypes.iter().map(|(_k, v)| v)
         ).unwrap();
@@ -233,5 +238,31 @@ impl GenePool {
     pub fn preserve(&mut self, genotype: Genotype, fitness: f64) {
         println!("Preserving {}: {}", self.genotypes.len(), fitness);
         self.genotypes.push((genotype, fitness));
+        // Newly preserved begin to outumber the old generation.
+        if self.genotypes.len() >= 2 * self.generation_size {
+            fn cmp(v: &f64, v2: &f64) -> Ordering {
+                v.partial_cmp(v2).unwrap_or(Ordering::Equal)
+            }
+            let min = self.genotypes.iter()
+                .map(|(_, v)| *v)
+                .min_by(cmp).unwrap_or(0.0);
+            let max = self.genotypes.iter()
+                .map(|(_, v)| *v)
+                .max_by(cmp).unwrap_or(10.0);
+            let average = (min + max) / 2.0;
+            // Caution: new generation may score worse...
+            println!("New generation scores at least {}!", average);
+            let new: Vec<_> = self.genotypes.iter()
+                .filter(|(_, score)| score >= &average)
+                .map(|c| c.clone())
+                .collect();
+            if new.len() == 0 {
+                println!("All losers. Trying again.");
+            } else {
+                self.genotypes = new;
+                self.generation_size = self.genotypes.len();
+                println!("{} breeds", self.generation_size);
+            }
+        }
     }
 }
