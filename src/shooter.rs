@@ -245,21 +245,19 @@ impl GenePool {
             fn cmp(v: &f64, v2: &f64) -> Ordering {
                 v.partial_cmp(v2).unwrap_or(Ordering::Equal)
             }
-            let min = self.genotypes.iter()
+            let average = self.genotypes.iter()
                 .map(|(_, v)| *v)
-                .min_by(cmp).unwrap_or(0.0);
-            let max = self.genotypes.iter()
-                .map(|(_, v)| *v)
-                .max_by(cmp).unwrap_or(10.0);
-            let average = (min + max) / 2.0;
+                .sum() / self.genotypes.len() as f64;
             // Caution: new generation may score worse...
             println!("New generation scores at least {}!", average);
             let new: Vec<_> = self.genotypes.iter()
                 .filter(|(_, score)| score >= &average)
                 .map(|c| c.clone())
                 .collect();
-            if new.len() == 0 {
-                println!("All losers. Trying again.");
+            if new.len() < 2 {
+                println!("Losers. Reshuffling.");
+                let new = self.genotypes.iter().rev().take(2).collect();
+                self.genotypes = new;
             } else {
                 self.genotypes = new;
                 self.generation_size = self.genotypes.len();
