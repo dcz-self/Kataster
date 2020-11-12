@@ -1,11 +1,11 @@
-use bevy::asset::{ Assets, AssetServer };
+use bevy::asset::AssetServer;
 use bevy::audio::Audio;
 use bevy::core::Time;
-use bevy::ecs::{ Commands, Res, ResMut };
+use bevy::ecs::{ Commands, Res };
 use bevy::prelude::{ Entity, GlobalTransform, Mut, Quat, Query, Timer, Transform, Without, Vec3 };
-use bevy::sprite::ColorMaterial;
 use bevy_rapier2d::na;
 use bevy_rapier2d::na::{ Point2, Rotation2, UnitComplex, Vector2 };
+use super::assets;
 use super::mob;
 use super::laser as projectile;
 
@@ -96,11 +96,11 @@ pub fn weapon_trigger(
     transform: &Transform,
     mut commands: &mut Commands,
     asset_server: &Res<AssetServer>,
-    mut materials: &mut ResMut<Assets<ColorMaterial>>,
+    assets: &Res<assets::Assets>,
     audio_output: &Res<Audio>,
 ) {
     if weapon.repeat_timer.finished {
-        projectile::spawn(&mut commands, &asset_server, &mut materials, &audio_output, transform);
+        projectile::spawn(&mut commands, &asset_server, &assets, &audio_output, transform);
         weapon.repeat_timer.reset();
     }
 }

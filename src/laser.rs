@@ -13,6 +13,8 @@ use bevy_rapier2d::{
 use bevy_rapier2d::rapier::math::{ Isometry, Translation, Vector };
 use bevy_rapier2d::na::UnitComplex;
 
+use super::assets;
+
 
 /// 2d version
 fn into_isometry(translation: Vec3, rotation: Quat) -> Isometry<f32> {
@@ -31,11 +33,10 @@ fn into_isometry(translation: Vec3, rotation: Quat) -> Isometry<f32> {
 pub fn spawn(
     mut commands: &mut Commands,
     asset_server: &Res<AssetServer>,
-    mut materials: &mut ResMut<Assets<ColorMaterial>>,
+    assets: &Res<assets::Assets>,
     audio_output: &Res<Audio>,
     transform: &Transform,
 ) {
-    let texture_handle = asset_server.load("laserRed07.png");
     let isometry = into_isometry(
         transform.translation.clone(),
         transform.rotation.clone()
@@ -63,7 +64,7 @@ pub fn spawn(
             // start from the correct position.
             // Compromise: update renderer position manually.
             global_transform: transform.into(),
-            material: materials.add(texture_handle.into()),
+            material: assets.projectile.clone().unwrap(),
             ..Default::default()
         })
         .with(Laser {

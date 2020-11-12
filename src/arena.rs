@@ -13,7 +13,6 @@ use rand_distr::Poisson;
 use std::f32;
 use super::components::*;
 use super::player::*;
-use super::shooter;
 use super::state::*;
 
 
@@ -68,7 +67,7 @@ fn spawn_borg(
     mut materials: ResMut<Assets<ColorMaterial>>,
     control: ControlledBy,
 ) {
-    let texture_handle = asset_server.load("survivor-shoot_rifle_0.png");
+    let texture_handle: Handle<_> = asset_server.load("survivor-shoot_rifle_0.png");
     let arrow = asset_server.load("arrow.png");
     let body = RigidBodyBuilder::new_dynamic();
     let collider = ColliderBuilder::ball(1.0);

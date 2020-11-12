@@ -5,7 +5,7 @@
  */
 
 
-use bevy::prelude::{ Commands, Entity, Mut, Query, Res, ResMut, Time };
+use bevy::prelude::{ Mut, Query, Res, ResMut, Time };
 use bevy_rapier2d::{
     physics::RigidBodyHandleComponent,
     rapier::dynamics::RigidBodySet,

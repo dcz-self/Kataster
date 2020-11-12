@@ -4,6 +4,7 @@ use bevy_rapier2d::physics::RapierConfiguration;
 use bevy_rapier2d::physics::RapierPhysicsPlugin;
 
 mod arena;
+mod assets;
 mod bobox;
 mod brain;
 mod components;
@@ -84,6 +85,7 @@ fn main() {
         .add_system(pause_menu.system())
         .add_system(draw_blink_system.system())
         .add_system(state_exit_despawn.system())
+        .add_startup_system(assets::setup.system())
         .add_startup_system(setup.system())
         .add_system_to_stage(stage::POST_UPDATE, contact::contact_system.system())
         .add_system_to_stage("HANDLE_CONTACT", spawn_asteroid_system.system())

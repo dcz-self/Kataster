@@ -8,6 +8,7 @@ use bevy_rapier2d::{
 };
 use bevy_rapier2d::na::{ Point2, Translation2, Vector2 };
 use super::arena;
+use super::assets;
 use super::components::{weapon_trigger, Borg, LooksAt, Weapon};
 use super::state::*;
 
@@ -50,7 +51,7 @@ pub fn mouse_shoot(
     mut commands: Commands,
     runstate: Res<RunState>,
     asset_server: Res<AssetServer>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
+    assets: Res<assets::Assets>,
     audio_output: Res<Audio>,
     mouse_button_input: Res<Input<MouseButton>>,
     mut weapons: Query<(&Transform, Mut<Weapon>)>,
@@ -60,7 +61,7 @@ pub fn mouse_shoot(
     }
     if mouse_button_input.pressed(MouseButton::Left) {
         for (transform, mut weapon) in weapons.iter_mut() {
-            weapon_trigger(&mut weapon, transform, &mut commands, &asset_server, &mut materials, &audio_output);
+            weapon_trigger(&mut weapon, transform, &mut commands, &asset_server, &assets, &audio_output);
         }
     }
 }

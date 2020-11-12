@@ -4,11 +4,10 @@
  SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-use bevy::asset::{ Assets, AssetServer };
+use bevy::asset::AssetServer;
 use bevy::audio::Audio;
 use bevy::ecs::{ Commands, Entity, Mut, Query, Res, ResMut, Without };
 use bevy::math::{ Quat, Vec3 };
-use bevy::sprite::ColorMaterial;
 use bevy::transform::components::Transform;
 use bevy_rapier2d::na::{ Point2, Vector2 };
 use bevy_rapier2d::{
@@ -17,6 +16,7 @@ use bevy_rapier2d::{
 };
 use rand::distributions::{ Bernoulli, WeightedIndex };
 use rand_distr::StandardNormal;
+use super::assets;
 use super::brain;
 use super::brain::{ Function, Neuron };
 use super::components::{ weapon_trigger, AttachedToEntity, Borg, LooksAt, Mob, Weapon };
@@ -152,7 +152,7 @@ pub struct Outputs {
 pub fn think(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
+    assets: Res<assets::Assets>,
     audio_output: Res<Audio>,
     mut bodies: ResMut<RigidBodySet>,
     mobs: Query<(&RigidBodyHandleComponent, &Mob)>,
@@ -188,7 +188,7 @@ pub fn think(
             let abs_angle = body.position.rotation.angle() + outputs.aim_rel_angle;
             transform.rotation = Quat::from_axis_angle(Vec3::new(0.0, 0.0, 1.0), abs_angle);
             if outputs.shoot {
-                weapon_trigger(&mut weapon, &transform, &mut commands, &asset_server, &mut materials, &audio_output);
+                weapon_trigger(&mut weapon, &transform, &mut commands, &asset_server, &assets, &audio_output);
             }
         }
     }
