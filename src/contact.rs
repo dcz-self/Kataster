@@ -109,7 +109,7 @@ pub fn contact_system(
                         .unwrap();
                     let mut borg = ships.get_mut(e1).unwrap();
                     let damage = damages.get(e2).unwrap();
-                    borg.life -= damage.value;
+                    borg.life = borg.life.saturating_sub(damage.value);
                     if borg.life <= 0 {
                         explosion_spawn_events.send(ExplosionSpawnEvent {
                             kind: ExplosionKind::ShipDead,
