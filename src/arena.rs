@@ -107,7 +107,7 @@ fn spawn_borg(
         });
 
     let genotype = runstate.shooter_gene_pool.spawn();
-    println!("Spawned genotype {:#?}", genotype);
+    println!("Spawned genotype {}", genotype.pretty_print().unwrap());
     match control {
         ControlledBy::Player => commands.with(KeyboardWalk),
         ControlledBy::AI => commands.with(genotype),

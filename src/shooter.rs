@@ -17,6 +17,7 @@ use bevy_rapier2d::{
 use rand::distributions::{ Bernoulli, WeightedIndex };
 use rand_distr::StandardNormal;
 use std::f32;
+use std::fmt;
 use super::assets;
 use super::brain;
 use super::brain::{ Function, Neuron };
@@ -27,6 +28,7 @@ use super::geometry::{ angle_from, get_nearest };
 use rand::Rng;
 use rand::distributions::Distribution;
 use rand::seq::IteratorRandom;
+use std::fmt::Write;
 use super::brain::Brain as _;
 
 
@@ -87,6 +89,8 @@ fn dumb_output_layer(num_outputs: usize, synapse_count: u8) -> Vec<Neuron> {
 pub struct Brain {
     hidden_layer: Vec<Neuron>,
     output_layer: Vec<Neuron>,
+    // TODO: remove
+    mut_count: u16,
 }
 
 impl Brain {
@@ -94,7 +98,28 @@ impl Brain {
         Brain {
             hidden_layer: dumb_hidden_layer(hidden_neurons, INPUT_COUNT),
             output_layer: dumb_output_layer(2, hidden_neurons),
+            mut_count: 0,
         }
+    }
+    
+    pub fn pretty_print(&self) -> Result<String, fmt::Error> {
+        let mut f = String::new();
+        fn fmt_neurons(layer: &[Neuron], f: &mut String) -> fmt::Result {
+            for neuron in layer {
+                write!(f, "    {:?}: ", neuron.activation)?;
+                for weight in &neuron.weights {
+                    write!(f, "{:.3} ", weight)?;
+                }
+                write!(f, "\n")?;
+            }
+            Ok(())
+        }
+        writeln!(f, "Mut {}", self.mut_count)?;
+        writeln!(f, "Hidden")?;
+        fmt_neurons(&self.hidden_layer, &mut f)?;
+        writeln!(f, "Out")?;
+        fmt_neurons(&self.output_layer, &mut f)?;
+        Ok(f)
     }
 }
 
@@ -117,9 +142,10 @@ impl brain::Brain for Brain {
         let weight_deviation = 0.5;
         let weight_rate = 1.0;
         let weight_dist = Bernoulli::new(strength * weight_rate).unwrap();
-        let connect_rate = 0.2;
-        let connect_change_dist = Bernoulli::new(strength * connect_rate).unwrap();
-        let connect_dist = Bernoulli::new(0.3).unwrap();
+        let connect_rate = 0.1;
+        let disconnect_rate = 0.2;
+        let connect_dist = Bernoulli::new(strength * connect_rate).unwrap();
+        let disconnect_dist = Bernoulli::new(strength * disconnect_rate).unwrap();
         let activation_rate = 0.3;
         let activation_dist = Bernoulli::new(strength * activation_rate).unwrap();
         let activation_options = [Function::Linear, Function::Step01, Function::Gaussian, Function::ReLU, Function::Logistic];
@@ -128,15 +154,17 @@ impl brain::Brain for Brain {
         let mut mutate_layer = |mut layer: &mut [Neuron]| {
             for mut neuron in layer {
                 for mut weight in neuron.weights.iter_mut() {
-                    *weight = match rng.sample(&connect_change_dist) {
-                        true => match (rng.sample(&connect_dist), *weight) {
-                            (true, 0.0) => rng.sample::<f32, _>(StandardNormal) * weight_deviation,
-                            (true, weight) => weight,
-                            (false, _) => 0.0,
+                    *weight = match *weight {
+                        0.0 => match rng.sample(&connect_dist) {
+                            true => rng.sample::<f32, _>(StandardNormal) * weight_deviation,
+                            false => 0.0,
                         },
-                        false => match rng.sample(&weight_dist) {
-                            true => *weight + rng.sample::<f32, _>(StandardNormal) * weight_deviation,
-                            false => *weight,
+                        weight => match rng.sample(&disconnect_dist) {
+                            true => 0.0,
+                            false => match rng.sample(&weight_dist) {
+                                true => weight + rng.sample::<f32, _>(StandardNormal) * weight_deviation,
+                                false => weight,
+                            }
                         }
                     }
                 }
@@ -148,6 +176,7 @@ impl brain::Brain for Brain {
 
         mutate_layer(&mut self.hidden_layer);
         mutate_layer(&mut self.output_layer);
+        self.mut_count += 1;
         self
     }
 }
@@ -216,7 +245,16 @@ pub fn think(
     }
 }
 
+
 pub type Genotype = Brain;
+
+/*
+#[derive(Clone)]
+pub struct Genotype {
+    brain: Brain,
+    /// Tracking "true" generation number
+    mutation_rounds: u16,
+}*/
 
 /// Third iteration.
 /// Let's experiment with keeping Adam and Eve as a regular genotype,
@@ -248,10 +286,12 @@ impl GenePool {
     }
 
     pub fn spawn(&self) -> Genotype {
-        let distribution = WeightedIndex::new(
-            self.genotypes.iter().map(|(_k, v)| v)
-        ).unwrap();
-        let index = distribution.sample(&mut rand::thread_rng());
+        // Best performers will get filtered out at generation swap,
+        // favoring them here seems to lead to magnification of flukes:
+        // they get repeated needlessly.
+        // While fluke's spawn will get filtered out,
+        // it fills out spaces that would have been used for genetic diversity.
+        let index = (0..self.genotypes.len()).choose(&mut rand::thread_rng()).unwrap();
         println!("Spawn offspring of {}", index);
         self.genotypes
             .get(index)
@@ -265,10 +305,10 @@ impl GenePool {
         println!("Preserving {}: {} (total {})", self.genotypes.len(), fitness, self.preserved_total);
         self.genotypes.push((genotype, fitness));
         // Newly preserved begin to give some chances for the old generation to breed more than once.
-        if self.genotypes.len() > 2 * self.generation_size {
+        if self.genotypes.len() > 3 * self.generation_size {
             self.generations_spawned += 1;
             // The oldest had a go already. This eliminates flukes, hopefully.
-            let candidates: Vec<_> = self.genotypes.iter().skip(1).map(|c| c.clone()).collect();
+            let mut candidates: Vec<_> = self.genotypes.iter().skip(1).map(|c| c.clone()).collect();
             let average = candidates.iter()
                 .map(|(_, v)| *v)
                 .sum::<f64>() / candidates.len() as f64;
@@ -280,6 +320,7 @@ impl GenePool {
                 .collect();
             if new.len() < 2 {
                 println!("Losers. Reshuffling.");
+                candidates.push((Brain::new_dumb(3), average));
                 let new = candidates.iter().rev().map(|c| c.clone()).take(2).collect();
                 self.genotypes = new;
             } else {
