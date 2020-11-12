@@ -65,6 +65,8 @@ fn main() {
         .add_system(hold_borgs.system())
         .add_system(mob::count_lifetime.system())
         .add_system_to_stage(stage::POST_UPDATE, user_input_system.system())
+        .add_system_to_stage(stage::POST_UPDATE, player::restart_simulation.system())
+        .add_system_to_stage(stage::POST_UPDATE, player::restart_simulation2.system())
         .add_system(player::point_at_mouse.system())
         .add_system(player::keyboard_walk.system())
         .add_system_to_stage("FOLLOW", components::swivel_at.system())

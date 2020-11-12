@@ -30,6 +30,10 @@ use rand::seq::IteratorRandom;
 use super::brain::Brain as _;
 
 
+const BARELY_CONNECTED: f32 = 0.001;
+const UNCONNECTED: f32 = 0.0;
+
+
 /// Process a fully connected layer
 fn process_layer(neurons: &[Neuron], mut inputs: Vec<f32>) -> Vec<f32> {
     inputs.push(1.0);
@@ -39,40 +43,57 @@ fn process_layer(neurons: &[Neuron], mut inputs: Vec<f32>) -> Vec<f32> {
 
 fn unconnected_neuron(synapse_count: u8) -> Neuron {
     Neuron {
-        weights: (0..synapse_count).map(|_| 0.0).collect(),
+        weights: (0..synapse_count + 1).map(|_| UNCONNECTED).collect(),
         activation: Function::Linear,
     }
 }
 
-/// Does as little as possible while staying connected.
+/// Does as little as possible while staying fully connected.
 fn dumb_neuron(synapse_count: u8) -> Neuron {
-    let mut n = unconnected_neuron(synapse_count);
-    n.weights[0] = 0.01;
-    n
+    Neuron {
+        weights: (0..synapse_count + 1).map(|_| BARELY_CONNECTED).collect(),
+        activation: Function::Linear,
+    }
 }
 
+
+fn dumb_hidden_layer(num_neurons: u8, input_count: u8) -> Vec<Neuron> {
+    (0..input_count)
+        .map(|_| dumb_neuron(INPUT_COUNT))
+        .chain({
+            (input_count..num_neurons)
+                .map(|_| unconnected_neuron(INPUT_COUNT))
+        })
+        .collect()
+}
+
+
+
+fn dumb_output_layer(num_outputs: usize, synapse_count: u8) -> Vec<Neuron> {
+    (0..num_outputs)
+        .map(|i| {
+            // Connect each neuron with the one directly "above" it.
+            // It leaves the "overflow" of hidden neurons unconnected.
+            let mut n = unconnected_neuron(synapse_count);
+            n.weights[i] = BARELY_CONNECTED;
+            n
+        })
+        .collect()
+}
 
 /// Brain used by the last stand hero
 /// Uses a single hidden layer of neurons
 #[derive(Debug, Clone, PartialEq)]
 pub struct Brain {
     hidden_layer: Vec<Neuron>,
-    output_layer: [Neuron; 1],
+    output_layer: Vec<Neuron>,
 }
 
 impl Brain {
     pub fn new_dumb(hidden_neurons: u8) -> Brain {
         Brain {
-            hidden_layer: {
-                // Seed the layer with at least one connection.
-                vec![dumb_neuron(INPUT_COUNT + 1)].into_iter()
-                    .chain(
-                        (1..hidden_neurons)
-                            .map(|_| unconnected_neuron(INPUT_COUNT + 1))
-                    )
-                    .collect()
-            },
-            output_layer: [dumb_neuron(hidden_neurons + 1)],
+            hidden_layer: dumb_hidden_layer(hidden_neurons, INPUT_COUNT),
+            output_layer: dumb_output_layer(2, hidden_neurons),
         }
     }
 }
@@ -86,7 +107,7 @@ impl brain::Brain for Brain {
         let outputs = process_layer(&self.output_layer, hidden);
         Outputs {
             walk: false,
-            turn: 0.0,
+            turn: outputs[1],
             shoot: true,
             aim_rel_angle: outputs[0],
         }
@@ -96,9 +117,10 @@ impl brain::Brain for Brain {
         let weight_deviation = 0.5;
         let weight_rate = 1.0;
         let weight_dist = Bernoulli::new(strength * weight_rate).unwrap();
-        let connect_rate = 0.1;
-        let connect_dist = Bernoulli::new(strength * connect_rate).unwrap();
-        let activation_rate = 0.25;
+        let connect_rate = 0.2;
+        let connect_change_dist = Bernoulli::new(strength * connect_rate).unwrap();
+        let connect_dist = Bernoulli::new(0.3).unwrap();
+        let activation_rate = 0.3;
         let activation_dist = Bernoulli::new(strength * activation_rate).unwrap();
         let activation_options = [Function::Linear, Function::Step01, Function::Gaussian, Function::ReLU, Function::Logistic];
         let mut rng = rand::thread_rng();
@@ -106,17 +128,15 @@ impl brain::Brain for Brain {
         let mut mutate_layer = |mut layer: &mut [Neuron]| {
             for mut neuron in layer {
                 for mut weight in neuron.weights.iter_mut() {
-                    *weight = if rng.sample(&connect_dist) {
-                        if weight == &0.0 {
-                            rng.sample::<f32, _>(StandardNormal) * weight_deviation
-                        } else {
-                            0.0
-                        }
-                    } else {
-                        if rng.sample(&weight_dist) {
-                            *weight + rng.sample::<f32, _>(StandardNormal) * weight_deviation
-                        } else {
-                            *weight
+                    *weight = match rng.sample(&connect_change_dist) {
+                        true => match (rng.sample(&connect_dist), *weight) {
+                            (true, 0.0) => rng.sample::<f32, _>(StandardNormal) * weight_deviation,
+                            (true, weight) => weight,
+                            (false, _) => 0.0,
+                        },
+                        false => match rng.sample(&weight_dist) {
+                            true => *weight + rng.sample::<f32, _>(StandardNormal) * weight_deviation,
+                            false => *weight,
                         }
                     }
                 }
@@ -177,7 +197,7 @@ pub fn think(
         });
         // Apply outputs. Might be better to do this in a separate step.
         body.wake_up(true);
-        body.angvel = outputs.turn;
+        body.angvel = (outputs.turn * borg.rotation_speed).min(borg.rotation_speed).max(-borg.rotation_speed);
         body.linvel = body.position.rotation.transform_vector(&Vector2::new(
             0.0,
             borg.speed * match outputs.walk {
@@ -211,6 +231,8 @@ pub struct GenePool {
     /// In this case, it's seconds of survival
     genotypes: Vec<(Genotype, f64)>,
     generation_size: usize,
+    preserved_total: u64,
+    generations_spawned: u64,
 }
 
 impl GenePool {
@@ -220,6 +242,8 @@ impl GenePool {
                 (Brain::new_dumb(3), 10.0), // High rate of initial breeding to Adam/Eve
             ],
             generation_size: 3,
+            generations_spawned: 0,
+            preserved_total: 0,
         }
     }
 
@@ -233,21 +257,23 @@ impl GenePool {
             .get(index)
             .map(|(genotype, chance)| genotype.clone())
             .unwrap()
-            .mutate(0.15)
+            .mutate(0.10)
     }
 
     pub fn preserve(&mut self, genotype: Genotype, fitness: f64) {
-        println!("Preserving {}: {}", self.genotypes.len(), fitness);
+        self.preserved_total += 1;
+        println!("Preserving {}: {} (total {})", self.genotypes.len(), fitness, self.preserved_total);
         self.genotypes.push((genotype, fitness));
         // Newly preserved begin to give some chances for the old generation to breed more than once.
         if self.genotypes.len() > 2 * self.generation_size {
+            self.generations_spawned += 1;
             // The oldest had a go already. This eliminates flukes, hopefully.
             let candidates: Vec<_> = self.genotypes.iter().skip(1).map(|c| c.clone()).collect();
             let average = candidates.iter()
                 .map(|(_, v)| *v)
                 .sum::<f64>() / candidates.len() as f64;
             // Caution: new generation may score worse...
-            println!("New generation scores at least {}!", average);
+            println!("New generation {} scores at least {}!", self.generations_spawned, average);
             let new: Vec<_> = candidates.iter()
                 .filter(|(_, score)| score >= &average)
                 .map(|c| c.clone())

@@ -104,6 +104,22 @@ pub fn keyboard_walk(
     }
 }
 
+pub fn restart_simulation(
+    mut runstate: ResMut<RunState>,
+) {
+    if runstate.gamestate.is(GameState::GameOver) {
+        runstate.gamestate.transit_to(GameState::StartMenu);
+    }
+}
+
+pub fn restart_simulation2(
+    mut runstate: ResMut<RunState>,
+) {
+    if runstate.gamestate.is(GameState::StartMenu) {
+        runstate.gamestate.transit_to(GameState::Game);
+    }
+}
+
 pub fn user_input_system(
     mut runstate: ResMut<RunState>,
     input: Res<Input<KeyCode>>,
