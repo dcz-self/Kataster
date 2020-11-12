@@ -16,6 +16,7 @@ use bevy_rapier2d::{
 };
 use rand::distributions::{ Bernoulli, WeightedIndex };
 use rand_distr::StandardNormal;
+use std::f32;
 use super::assets;
 use super::brain;
 use super::brain::{ Function, Neuron };
@@ -92,7 +93,7 @@ impl brain::Brain for Brain {
     }
 
     fn mutate(mut self, strength: f64) -> Brain {
-        let weight_deviation = 2.0;
+        let weight_deviation = 0.5;
         let weight_rate = 1.0;
         let weight_dist = Bernoulli::new(strength * weight_rate).unwrap();
         let connect_rate = 0.1;
@@ -171,7 +172,7 @@ pub fn think(
             .unwrap_or(Point2::new(0.0, 0.0));
         let rot = angle_from(&body.position, &nearest);
         let outputs = brain.process(Inputs {
-            mob_rel_angle: rot,
+            mob_rel_angle: rot / f32::consts::PI,
             time_survived: borg.time_alive,
         });
         // Apply outputs. Might be better to do this in a separate step.
@@ -186,7 +187,7 @@ pub fn think(
         ));
         let weapons = weapons.iter_mut().filter(|(_w, _t, parent)| parent.0 == entity);
         for (mut weapon, mut transform, _parent) in weapons {
-            let abs_angle = body.position.rotation.angle() + outputs.aim_rel_angle;
+            let abs_angle = body.position.rotation.angle() + outputs.aim_rel_angle * f32::consts::PI;
             transform.rotation = Quat::from_axis_angle(Vec3::new(0.0, 0.0, 1.0), abs_angle);
             if outputs.shoot {
                 weapon_trigger(&mut weapon, &transform, &mut commands, &asset_server, &assets, &audio_output);
