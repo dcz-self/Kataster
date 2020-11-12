@@ -81,7 +81,7 @@ impl brain::Brain for Brain {
     type Inputs = Inputs;
     type Outputs = Outputs;
     fn process(&mut self, inputs: Inputs) -> Outputs {
-        let inputs = vec![inputs.mob_rel_angle, 1.0];
+        let inputs = vec![inputs.mob_rel_angle, inputs.time_survived, 1.0];
         let hidden = process_layer(&self.hidden_layer, inputs);
         let outputs = process_layer(&self.output_layer, hidden);
         Outputs {
@@ -136,9 +136,10 @@ impl brain::Brain for Brain {
 pub struct Inputs {
     //mob_distance: f32,
     mob_rel_angle: f32,
+    time_survived: f32,
 }
 
-const INPUT_COUNT: u8 = 1;
+const INPUT_COUNT: u8 = 2;
 
 pub struct Outputs {
     walk: bool,
@@ -173,6 +174,7 @@ pub fn think(
         let rot = angle_from(&body.position, &nearest);
         let outputs = brain.process(Inputs {
             mob_rel_angle: rot,
+            time_survived: borg.time_alive,
         });
         // Apply outputs. Might be better to do this in a separate step.
         body.wake_up(true);
@@ -232,7 +234,7 @@ impl GenePool {
             .get(index)
             .map(|(genotype, chance)| genotype.clone())
             .unwrap()
-            .mutate(0.2)
+            .mutate(0.15)
     }
 
     pub fn preserve(&mut self, genotype: Genotype, fitness: f64) {
