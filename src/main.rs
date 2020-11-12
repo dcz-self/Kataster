@@ -11,6 +11,7 @@ mod components;
 mod contact;
 mod debug;
 mod explosion;
+mod fps;
 mod geometry;
 mod laser;
 mod mob;
@@ -44,6 +45,7 @@ fn main() {
         .add_event::<AsteroidSpawnEvent>()
         .add_event::<ExplosionSpawnEvent>()
         .add_plugin(RapierPhysicsPlugin)
+        .add_plugin(fps::Plugin)
         .add_plugins(DefaultPlugins)
         .init_asset_loader::<paq::Loader>()
         .add_resource(RapierConfiguration {
