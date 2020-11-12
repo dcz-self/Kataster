@@ -323,7 +323,7 @@ impl GenePool {
             if new.len() < 2 {
                 println!("Losers. Reshuffling.");
                 candidates.push((Brain::new_dumb(3), average));
-                let new = candidates.iter().rev().map(|c| c.clone()).take(2).collect();
+                let new = candidates.iter().rev().map(|c| c.clone()).collect();
                 self.genotypes = new;
             } else {
                 self.generation_size = new.len();
