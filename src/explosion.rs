@@ -1,6 +1,8 @@
+use bevy::prelude::*;
+use super::assets;
 use super::components::*;
 use super::state::*;
-use bevy::prelude::*;
+
 
 #[derive(Default)]
 pub struct SpawnExplosionState {
@@ -16,42 +18,41 @@ pub fn spawn_explosion(
     mut commands: Commands,
     mut state: Local<SpawnExplosionState>,
     asset_server: Res<AssetServer>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
+    assets: Res<assets::Assets>,
     audio_output: Res<Audio>,
     events: Res<Events<ExplosionSpawnEvent>>,
 ) {
     for event in state.event_reader.iter(&events) {
-        let (texture_name, sound_name, start_scale, end_scale, duration) = match event.kind {
+        let (texture_handle, sound_name, start_scale, end_scale, duration) = match event.kind {
             ExplosionKind::ShipDead => (
-                "explosion01.png",
+                None,
                 "Explosion_ship.mp3",
                 0.1 / 15.0,
                 0.5 / 15.0,
                 1.5,
             ),
             ExplosionKind::ShipContact => (
-                "flash00.png",
+                None,
                 "Explosion.mp3",
                 0.05 / 15.0,
                 0.1 / 15.0,
                 0.5,
             ),
             ExplosionKind::LaserOnAsteroid => (
-                "flash00.png",
+                assets.removal.clone(),
                 "Explosion.mp3",
                 0.1 / 15.0,
                 0.15 / 15.0,
                 0.5,
             ),
         };
-        let texture_handle = asset_server.load(texture_name);
         commands
             .spawn(SpriteComponents {
                 transform: {
                     Transform::from_translation(Vec3::new(event.x, event.y, -1.0))
                         .mul_transform(Transform::from_scale(Vec3::splat(1.0 / 16.0)))
                 },
-                material: materials.add(texture_handle.into()),
+                material: texture_handle.unwrap_or(Default::default()),
                 ..Default::default()
             })
             .with(Explosion {

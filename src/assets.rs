@@ -15,6 +15,7 @@ const ASSET_DIR: &str = "./assets/";
 
 pub struct Assets {
     pub projectile: Option<Handle<ColorMaterial>>,
+    pub removal: Option<Handle<ColorMaterial>>,
 }
 
 pub fn setup(
@@ -23,7 +24,9 @@ pub fn setup(
     mut materials: ResMut<asset::Assets<ColorMaterial>>,
 ) {
     let projectile = asset_server.load("laserRed07.png");
+    let removal = asset_server.load("flash00.png");
     commands.insert_resource(Assets {
         projectile: Some(materials.add(projectile.into())),
+        removal: Some(materials.add(removal.into())),
     });
 }
