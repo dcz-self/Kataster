@@ -240,7 +240,7 @@ impl GenePool {
         println!("Preserving {}: {}", self.genotypes.len(), fitness);
         self.genotypes.push((genotype, fitness));
         // Newly preserved begin to give some chances for the old generation to breed more than once.
-        if self.genotypes.len() >= 2 * self.generation_size {
+        if self.genotypes.len() >= 3 * self.generation_size {
             // The oldest had a go already. This eliminates flukes, hopefully.
             let candidates: Vec<_> = self.genotypes.iter().skip(1).map(|c| c.clone()).collect();
             let average = candidates.iter()
