@@ -119,10 +119,11 @@ pub fn contact_system(
                         commands.despawn_recursive(e1);
                         // FIXME: despawn LookAts
                         // This is kind of flaky... There could be a separate system to catch brainful despawns.
+                        let score = runstate.score.unwrap_or(0);
                         match genotypes.get(e1) {
                             Ok(genotype) => runstate.shooter_gene_pool.preserve(
                                 genotype.clone(),
-                                borg.time_alive as f64,
+                                score as f64,
                             ),
                             Err(QueryError::NoSuchEntity) => {},
                             Err(e) => println!("Borg unuseable genotype {:?}", e),

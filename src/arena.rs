@@ -85,6 +85,7 @@ fn spawn_borg(
             speed: 10.0,
             life: START_LIFE,
             time_alive: 0.0,
+            score: 0,
         })
         .with(body)
         .with(collider)

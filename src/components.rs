@@ -20,6 +20,8 @@ pub struct Borg {
     /// Ship life points
     pub life: u32,
     pub time_alive: f32,
+    /// Better way of estimating success?
+    pub score: u32,
 }
 pub type Ship = Borg;
 
