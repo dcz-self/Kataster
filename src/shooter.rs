@@ -219,7 +219,7 @@ impl GenePool {
             genotypes: vec![
                 (Brain::new_dumb(3), 10.0), // High rate of initial breeding to Adam/Eve
             ],
-            generation_size: 4,
+            generation_size: 3,
         }
     }
 
