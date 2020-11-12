@@ -51,7 +51,7 @@ impl Function {
                 true => value,
                 false => value * 0.01,
             },
-            Gaussian => (value * value).exp(),
+            Gaussian => (-(value * value)).exp(),
         }
     }
 }
