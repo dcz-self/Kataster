@@ -139,7 +139,7 @@ impl brain::Brain for Brain {
     }
 
     fn mutate(mut self, strength: f64) -> Brain {
-        let weight_deviation = 0.5;
+        let weight_deviation = 0.7;
         let weight_rate = 1.0;
         let weight_dist = Bernoulli::new(strength * weight_rate).unwrap();
         let connect_rate = 0.1;
@@ -305,9 +305,11 @@ impl GenePool {
         println!("Preserving {}: {} (total {})", self.genotypes.len(), fitness, self.preserved_total);
         self.genotypes.push((genotype, fitness));
         // Newly preserved begin to give some chances for the old generation to breed more than once.
-        if self.genotypes.len() > 3 * self.generation_size {
+        // But don't blow up the gene pool at each generation.
+        if self.genotypes.len() > (5 * self.generation_size) / 2 {
             self.generations_spawned += 1;
-            // The oldest had a go already. This eliminates flukes, hopefully.
+            // Skip one as a way for flukes to leave the system.
+            // They won't have elevated spawn within a generation, but will stick to many generations otherwise.
             let mut candidates: Vec<_> = self.genotypes.iter().skip(1).map(|c| c.clone()).collect();
             let average = candidates.iter()
                 .map(|(_, v)| *v)
