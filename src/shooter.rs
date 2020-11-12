@@ -16,7 +16,6 @@ use bevy_rapier2d::{
 };
 use rand::distributions::{ Bernoulli, WeightedIndex };
 use rand_distr::StandardNormal;
-use std::cmp::Ordering;
 use super::assets;
 use super::brain;
 use super::brain::{ Function, Neuron };
@@ -93,7 +92,7 @@ impl brain::Brain for Brain {
     }
 
     fn mutate(mut self, strength: f64) -> Brain {
-        let weight_deviation = 5.0;
+        let weight_deviation = 2.0;
         let weight_rate = 1.0;
         let weight_dist = Bernoulli::new(strength * weight_rate).unwrap();
         let connect_rate = 0.1;
@@ -107,7 +106,6 @@ impl brain::Brain for Brain {
             for mut neuron in layer {
                 for mut weight in neuron.weights.iter_mut() {
                     *weight = if rng.sample(&connect_dist) {
-                        println!("Connect");
                         if weight == &0.0 {
                             rng.sample::<f32, _>(StandardNormal) * weight_deviation
                         } else {
@@ -240,27 +238,26 @@ impl GenePool {
     pub fn preserve(&mut self, genotype: Genotype, fitness: f64) {
         println!("Preserving {}: {}", self.genotypes.len(), fitness);
         self.genotypes.push((genotype, fitness));
-        // Newly preserved begin to outumber the old generation.
+        // Newly preserved begin to give some chances for the old generation to breed more than once.
         if self.genotypes.len() >= 2 * self.generation_size {
-            fn cmp(v: &f64, v2: &f64) -> Ordering {
-                v.partial_cmp(v2).unwrap_or(Ordering::Equal)
-            }
-            let average = self.genotypes.iter()
+            // The oldest had a go already. This eliminates flukes, hopefully.
+            let candidates: Vec<_> = self.genotypes.iter().skip(1).map(|c| c.clone()).collect();
+            let average = candidates.iter()
                 .map(|(_, v)| *v)
-                .sum() / self.genotypes.len() as f64;
+                .sum::<f64>() / candidates.len() as f64;
             // Caution: new generation may score worse...
             println!("New generation scores at least {}!", average);
-            let new: Vec<_> = self.genotypes.iter()
+            let new: Vec<_> = candidates.iter()
                 .filter(|(_, score)| score >= &average)
                 .map(|c| c.clone())
                 .collect();
             if new.len() < 2 {
                 println!("Losers. Reshuffling.");
-                let new = self.genotypes.iter().rev().take(2).collect();
+                let new = candidates.iter().rev().map(|c| c.clone()).take(2).collect();
                 self.genotypes = new;
             } else {
+                self.generation_size = new.len();
                 self.genotypes = new;
-                self.generation_size = self.genotypes.len();
                 println!("{} breeds", self.generation_size);
             }
         }
