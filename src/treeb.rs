@@ -7,6 +7,7 @@
 use crate::brain;
 use crate::brain::Function;
 use std::collections::HashSet;
+use std::ops::{ Index, IndexMut };
 
 
 use std::iter::FromIterator;
@@ -105,11 +106,30 @@ impl Node {
 }
 
 #[derive(Clone)]
-struct Digraph(Vec<Node>);
+struct Digraph(Vec<Option<Node>>);
+
+impl Index<Idx> for Digraph {
+    type Output = Node;
+    fn index(&self, idx: Idx) -> &Node {
+        self.0[idx.0].as_ref().expect("Index emptied")
+    }
+}
+
+impl IndexMut<Idx> for Digraph {
+    fn index_mut(&mut self, idx: Idx) -> &mut Node {
+        self.0[idx.0].as_mut().expect("Index emptied")
+    }
+}
+
+impl From<Vec<Node>> for Digraph {
+    fn from(nodes: Vec<Node>) -> Digraph {
+        Digraph(nodes.into_iter().map(Some).collect())
+    }
+}
 
 impl Digraph {
     fn depth_first_collect<R, F: Fn(Idx, &[R]) -> R>(&self, idx: Idx, f: &F) -> R {
-        let next = match &self.0[idx.0] {
+        let next = match &self[idx] {
             Node::Output(_, neuron) => Some(neuron),
             Node::Hidden(neuron) => Some(neuron),
             Node::MemoryWrite(_, neuron) => Some(neuron),
@@ -130,7 +150,7 @@ impl Digraph {
     /// Goes depth first until it finds the first true
     fn depth_first_visit<F: Fn(Idx) -> bool>(&self, idx: Idx, f: &F) -> bool {
         f(idx) || {
-            let next = match &self.0[idx.0] {
+            let next = match &self[idx] {
                 Node::Output(_, neuron) => Some(neuron),
                 Node::Hidden(neuron) => Some(neuron),
                 Node::MemoryWrite(_, neuron) => Some(neuron),
@@ -157,7 +177,7 @@ impl Digraph {
     }
 
     fn add_connection(&mut self, from: Idx, to: Idx, weight: f32) -> Result<(), &str> {
-        let valid_source = match self.0[from.0] {
+        let valid_source = match self[from] {
             Node::MemoryWrite(_, _) => false,
             Node::Output(_, _) => false,
             _ => true,
@@ -167,7 +187,7 @@ impl Digraph {
             if self.is_predecessor(from, to) {
                 Err("Target connects to source")
             } else {
-                let neuron = match &mut self.0[to.0] {
+                let neuron = match &mut self[to] {
                     Node::Input(_) => None,
                     Node::MemoryRead(_) => None,
                     Node::Bias => None,
@@ -194,7 +214,7 @@ impl Digraph {
     }
 
     fn remove_connection(&mut self, from: Idx, to: Idx) -> Result<(), &str> {
-        let neuron = match &mut self.0[to.0] {
+        let neuron = match &mut self[to] {
             Node::Input(_) => None,
             Node::MemoryRead(_) => None,
             Node::Bias => None,
@@ -217,12 +237,62 @@ impl Digraph {
             None => Err("Target doesn't do connections"),
         }
     }
+
+    fn add(&mut self, node: Node) -> Idx {
+        let node = Some(node);
+        let index = (0..self.0.len())
+            .find(|i| self.0[*i].is_none());
+        Idx(match index {
+            Some(i) => {
+                self.0[i] = node;
+                i
+            },
+            None => {
+                self.0.push(node);
+                self.0.len() - 1
+            }
+        })
+    }
+
+    fn remove(&mut self, target: Idx) {
+        self.0[target.0] = None;
+        use Node::*;
+        for node in self.0.iter_mut() {
+            let mut neuron = match node {
+                Some(Output(_, neuron)) => Some(neuron),
+                Some(Hidden(neuron)) => Some(neuron),
+                Some(MemoryWrite(_, neuron)) => Some(neuron),
+                _ => None,
+            };
+            if let Some(neuron) = neuron {
+                let synapses = neuron.synapses.clone().into_iter()
+                    .filter(|(i, weight)| *i == target)
+                    .collect();
+                neuron.synapses = synapses;
+            }
+        }
+        for i in (0..self.0.len()).rev() {
+            if let None = self.0[i] {
+                self.0.pop();
+            }
+        }
+    }
+
+    fn enumerate(&self) -> impl Iterator<Item=(Idx, &Node)> {
+        self.0.iter().enumerate()
+            .filter_map(|(i, n)| n.as_ref().map(|n| (Idx(i), n)))
+    }
+
+    fn position<P: Fn(&Node)->bool>(&self, pred: P) -> Option<Idx> {
+        self.enumerate().find(|(_, n)| pred(n)).map(|(i, _)| i)
+    }
 }
 
 
 /// No separate neuron create/remove.
 /// Lack of incoming connections constitutes removal.
 /// Always ensures one unconnected hidden neuron, and one unconnected storage.
+/// (Unconnected counts as no incoming connections.)
 #[derive(Clone)]
 struct Brain {
     nodes: Digraph,
@@ -244,10 +314,79 @@ impl Brain {
                     .chain((0..output_count).map(|i| Node::Output(i, Neuron::new_blank())))
                     // A single memory cell to connect to if desired
                     .chain(vec![Node::MemoryWrite(0, Neuron::new_blank())].into_iter())
+                    .map(Some)
                     .collect()
             ),
             memories: Vec::new(),
         }
+    }
+    
+    
+    /// Adds connection while managing brain invariant: keep extra nodes ready.
+    fn add_connection(&mut self, from: Idx, to: Idx, weight: f32) -> Result<(), &str> {
+        enum Action {
+            AddHidden,
+            AddMemory,
+            Nothing,
+        };
+        use Action::*;
+        let action = match self.nodes[to] {
+            Node::Hidden(_) => Action::AddHidden,
+            Node::MemoryWrite(_, _) => Action::AddMemory,
+            _ => Action::Nothing,
+        };
+        // Need to split it here because we're going to mutate nodes.
+        match action {
+            AddHidden => {
+                self.nodes.add(Node::Hidden(Neuron::new_blank()));
+            },
+            AddMemory => {
+                let idx = self.memories.len();
+                self.nodes.add(Node::MemoryRead(idx));
+                self.nodes.add(Node::MemoryWrite(idx, Neuron::new_blank()));
+            },
+            Nothing => {},
+        };
+        self.nodes.add_connection(from, to, weight)
+    }
+
+    /// Removes neurons if needed to maintain brain invariant.
+    fn remove_connection(&mut self, from: Idx, to: Idx) -> Result<(), &str> {
+        let is_removable = |neuron: &Neuron| neuron.synapses.len() == 0;
+        enum Action {
+            RemoveHidden, // Idx unneeded, it's "to"
+            RemoveMemory(Idx), // Index of corresponding MemoryRead
+            Nothing,
+        };
+        use Action::*;
+        let action = match &self.nodes[to] {
+            Node::Hidden(neuron) => match is_removable(neuron) {
+                true => RemoveHidden,
+                false => Nothing,
+            },
+            Node::MemoryWrite(i, neuron) => match is_removable(neuron) {
+                true => RemoveMemory(
+                    self.nodes
+                        .position(|n| match n {
+                            Node::MemoryRead(read_idx) => read_idx == i,
+                            _ => false,
+                        })
+                        .expect(&format!("No memory read corresponding to {}", i))
+                ),
+                false => Nothing,
+            }
+            _ => Nothing,
+        };
+        // Need to split the match to drop borrow of nodes
+        let idx = match action {
+            RemoveHidden => self.nodes.remove(to),
+            RemoveMemory(read_idx) => {
+                self.nodes.remove(to);
+                self.nodes.remove(read_idx);
+            },
+            Nothing => {},
+        };
+        self.nodes.remove_connection(from, to)
     }
 }
 
@@ -256,17 +395,17 @@ impl brain::Brain for Brain {
     type Outputs = Vec<f32>;
     fn process(&mut self, inputs: Self::Inputs) -> Self::Outputs {
         use Node::*;
-        let end_idxs: Vec<_> = self.nodes.0.iter()
+        let end_idxs: Vec<_> = self.nodes
             .enumerate()
             .filter_map(|(i, n)| match n.is_end() {
-                true => Some(Idx(i)),
+                true => Some(i),
                 false => None,
             }).collect();
         
         let values = end_idxs.clone().into_iter()
             .map(|endidx| self.nodes.depth_first_collect(
                 endidx,
-                &|i, vals| match &self.nodes.0[i.0] {
+                &|i, vals| match &self.nodes[i] {
                     Bias => 1.0,
                     Hidden(neuron) => neuron.feed(vals),
                     Input(idx) => inputs[*idx],
@@ -281,7 +420,7 @@ impl brain::Brain for Brain {
             = (0..self.memories.len()).map(|_| 1337.0).collect();
         
         for (n, v) in end_idxs.into_iter()
-            .map(|i| &self.nodes.0[i.0])
+            .map(|i| &self.nodes[i])
             .zip(values)
         {
             match n {
@@ -304,7 +443,7 @@ impl brain::Brain for Brain {
         self.memories = memories;
         outputs
     }
-    
+
     fn mutate(self, strength: f64) -> Self {
         self
     }
@@ -320,7 +459,7 @@ mod tests {
 
     fn basic_connection_graph() -> Digraph {
         use super::Node::*;
-        Digraph(vec![
+        Digraph::from(vec![
             Input(0),
             Output(
                 0,
@@ -385,7 +524,7 @@ mod tests {
     #[test]
     fn reverse_connect_fail() {
         use super::Node::*;
-        let mut graph = Digraph(vec![
+        let mut graph = Digraph::from(vec![
             Hidden(Neuron {
                 activation: Function::Linear,
                 synapses: vec![],
@@ -401,7 +540,7 @@ mod tests {
     #[test]
     fn bias() {
         let mut brain = Brain {
-            nodes: Digraph(vec![
+            nodes: Digraph::from(vec![
                 Node::Bias,
                 Node::Output(
                     0,
@@ -419,7 +558,7 @@ mod tests {
     #[test]
     fn inputs() {
         let mut brain = Brain {
-            nodes: Digraph(vec![
+            nodes: Digraph::from(vec![
                 Node::Input(0),
                 Node::Input(1),
                 Node::Output(
@@ -441,7 +580,7 @@ mod tests {
     #[test]
     fn no_synapses() {
         let mut brain = Brain {
-            nodes: Digraph(vec![
+            nodes: Digraph::from(vec![
                 Node::Input(0),
                 Node::Input(1),
                 Node::Output(
@@ -460,7 +599,7 @@ mod tests {
     #[test]
     fn memory_read() {
         let mut brain = Brain {
-            nodes: Digraph(vec![
+            nodes: Digraph::from(vec![
                 Node::Input(0),
                 Node::MemoryRead(0), // should be 0 initially
                 Node::Output(
@@ -482,7 +621,7 @@ mod tests {
     #[test]
     fn memory_write() {
         let mut brain = Brain {
-            nodes: Digraph(vec![
+            nodes: Digraph::from(vec![
                 Node::Input(0),
                 Node::MemoryWrite(
                     0,
