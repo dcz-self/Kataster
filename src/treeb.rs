@@ -404,6 +404,25 @@ mod tests {
         assert_eq!(brain.process(vec![4.0, 5.0]), vec![-7.0]);
     }
 
+    #[test]
+    fn no_synapses() {
+        let mut brain = Brain {
+            nodes: Digraph(vec![
+                Node::Input(0),
+                Node::Input(1),
+                Node::Output(
+                    0,
+                    Neuron {
+                        activation: Function::Linear,
+                        synapses: vec![],
+                    },
+                ),
+            ]),
+            memories: Vec::new(),
+        };
+        assert_eq!(brain.process(vec![4.0, 5.0]), vec![0.0]);
+    }
+
 
     #[test]
     fn memory_read() {
