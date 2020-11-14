@@ -22,6 +22,8 @@ mod state;
 mod tga;
 mod treeb;
 mod ui;
+#[macro_use]
+mod util;
 
 use arena::*;
 use bobox::RapierUtilsPlugin;
