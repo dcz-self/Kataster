@@ -29,7 +29,7 @@ pub enum Function {
 }
 
 impl Function {
-    fn apply(&self, value: f32) -> f32 {
+    pub fn apply(&self, value: f32) -> f32 {
         use Function::*;
         match self {
             Step01 => match value > 0.0 {
@@ -75,4 +75,3 @@ impl Neuron {
         )
     }
 }
-

@@ -20,6 +20,7 @@ mod player;
 mod shooter;
 mod state;
 mod tga;
+mod treeb;
 mod ui;
 
 use arena::*;

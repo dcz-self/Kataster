@@ -27,7 +27,6 @@ use super::geometry::{ angle_from, get_nearest };
 
 
 use rand::Rng;
-use rand::distributions::Distribution;
 use rand::seq::IteratorRandom;
 use std::fmt::Write;
 use super::brain::Brain as _;
