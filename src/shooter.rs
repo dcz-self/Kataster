@@ -14,10 +14,11 @@ use bevy_rapier2d::{
     physics::RigidBodyHandleComponent,
     rapier::dynamics::RigidBodySet,
 };
-use rand::distributions::{ Bernoulli, WeightedIndex };
+use rand::distributions::Bernoulli;
 use rand_distr::StandardNormal;
 use std::f32;
 use std::fmt;
+use std::io;
 use super::assets;
 use super::brain;
 use super::brain::{ Function, Neuron };
@@ -120,6 +121,50 @@ impl Brain {
         writeln!(f, "Out")?;
         fmt_neurons(&self.output_layer, &mut f)?;
         Ok(f)
+    }
+    
+    pub fn to_dot<W: io::Write>(&self, mut f: &mut W) -> Result<(), io::Error> {
+        fn fmt_neurons<W: io::Write>(layer: &[Neuron], f: &mut W, name: &str, inputs: &str) -> io::Result<()> {
+            let a = |func| {
+                use Function::*;
+                match func {
+                    &Gaussian => "I",
+                    &Linear => "/",
+                    &Logistic => "S",
+                    &Step01 => "L",
+                    &ReLU => "v",
+                    _ => "?",
+                }
+            };
+                    
+            for (i, neuron) in layer.iter().enumerate() {
+                let name = format!("{}{}", name, i);
+                writeln!(f, r#"    {0} [label="{0}\n{1}"]"#, name, a(&neuron.activation))?;
+                for (i, weight) in neuron.weights.iter().enumerate() {
+                    writeln!(f, r#"    {}{} -> {} [label="{:.3}"]"#, inputs, i, name, weight)?;
+                }
+            }
+            Ok(())
+        }
+        fn fmt_rank<W: io::Write>(f: &mut W, names: &[String]) -> io::Result<()> {
+            write!(f, "    {{ rank=same")?;
+            for name in names {
+                write!(f, " {}", name)?;
+            }
+            writeln!(f, " }}")?;
+            Ok(())
+        }
+        writeln!(f, "Digraph Shooter {{")?;
+        fn name_layer(count: usize, name: &str) -> Vec<String> {
+            (0..(count + 1)).map(|n| format!("{}{}", name, n)).collect()
+        }
+        fmt_rank(&mut f, &name_layer(INPUT_COUNT as usize, "I"))?;
+        fmt_rank(&mut f, &name_layer(self.hidden_layer.len(), "H"))?;
+        fmt_rank(&mut f, &name_layer(self.output_layer.len(), "O"))?;
+        fmt_neurons(&self.hidden_layer, &mut f, "H", "I")?;
+        fmt_neurons(&self.output_layer, &mut f, "O", "H")?;
+        writeln!(f, "}}")?;
+        Ok(())
     }
 }
 
@@ -297,7 +342,7 @@ impl GenePool {
             .get(index)
             .map(|(genotype, chance)| genotype.clone())
             .unwrap()
-            .mutate(0.15)
+            .mutate(0.125)
     }
 
     pub fn preserve(&mut self, genotype: Genotype, fitness: f64) {
@@ -306,7 +351,7 @@ impl GenePool {
         self.genotypes.push((genotype, fitness));
         // Newly preserved begin to give some chances for the old generation to breed more than once.
         // But don't blow up the gene pool at each generation.
-        if self.genotypes.len() > 2 * self.generation_size {
+        if self.genotypes.len() >= 2 * self.generation_size {
             self.generations_spawned += 1;
             // Skip one as a way for flukes to leave the system.
             // They won't have elevated spawn within a generation, but will stick to many generations otherwise.

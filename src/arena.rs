@@ -11,6 +11,7 @@ use bevy_rapier2d::{
 use rand::{thread_rng, Rng};
 use rand_distr::Poisson;
 use std::f32;
+use std::fs::File;
 use super::components::*;
 use super::player::*;
 use super::state::*;
@@ -108,6 +109,12 @@ fn spawn_borg(
 
     let genotype = runstate.shooter_gene_pool.spawn();
     println!("Spawned genotype {}", genotype.pretty_print().unwrap());
+    match File::create("shooter.dot")
+        .and_then(|mut f| genotype.to_dot(&mut f))
+    {
+        Err(e) => eprintln!("Filed to write shooter.dot: {:?}", e),
+        Ok(_) => println!("Wrote shooter.dot"),
+    };
     match control {
         ControlledBy::Player => commands.with(KeyboardWalk),
         ControlledBy::AI => commands.with(genotype),
