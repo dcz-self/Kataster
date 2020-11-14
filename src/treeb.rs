@@ -192,6 +192,31 @@ impl Digraph {
             Err("Invalid source")
         }           
     }
+
+    fn remove_connection(&mut self, from: Idx, to: Idx) -> Result<(), &str> {
+        let neuron = match &mut self.0[to.0] {
+            Node::Input(_) => None,
+            Node::MemoryRead(_) => None,
+            Node::Bias => None,
+            Node::Output(_, neuron) => Some(neuron),
+            Node::Hidden(neuron) => Some(neuron),
+            Node::MemoryWrite(_, neuron) => Some(neuron),
+        };
+        match neuron {
+            Some(neuron) => {
+                let index = neuron.synapses.iter()
+                    .position(|(i, _)| *i == from);
+                match index {
+                    Some(index) => {
+                        neuron.synapses.remove(index);
+                        Ok(())
+                    },
+                    None => Err("Connection does not exist"),
+                }
+            },
+            None => Err("Target doesn't do connections"),
+        }
+    }
 }
 
 
@@ -281,7 +306,7 @@ impl brain::Brain for Brain {
     }
     
     fn mutate(self, strength: f64) -> Self {
-        panic!();
+        self
     }
 }
 
@@ -347,6 +372,15 @@ mod tests {
         let mut graph = basic_connection_graph();
         assert_matches!(graph.add_connection(Idx(0), Idx(0), 0.0), Err("Target connects to source"));
     }
+
+
+    #[test]
+    fn double_remove_connection() {
+        let mut graph = basic_connection_graph();
+        assert_matches!(graph.remove_connection(Idx(0), Idx(1)), Ok(()));
+        assert_matches!(graph.remove_connection(Idx(0), Idx(1)), Err("Connection does not exist"));
+    }
+
 
     #[test]
     fn reverse_connect_fail() {
@@ -422,7 +456,6 @@ mod tests {
         };
         assert_eq!(brain.process(vec![4.0, 5.0]), vec![0.0]);
     }
-
 
     #[test]
     fn memory_read() {
