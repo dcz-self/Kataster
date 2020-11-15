@@ -343,6 +343,7 @@ impl GenePool {
     pub fn preserve(&mut self, genotype: Genotype, fitness: f64) {
         self.genotypes.push((genotype, fitness, self.preserved_total));
         println!("Preserved as {} with score {}", self.preserved_total, fitness);
+        println!("Pop {}", self.genotypes.len());
         self.preserved_total += 1;
         
         let ideal_pop_size = 15;
@@ -362,7 +363,10 @@ impl GenePool {
                     .map(|c| c.clone())
                     .collect();
             println!("Killing {} oldies. Now pop {}.", kill_count, new.len());
-            new.resize(minimal_pop_size, (Brain::new_dumb(3), 40.0, 0));
+            if new.len() < minimal_pop_size {
+                println!("Filling up to {} with blanks", minimal_pop_size);
+                new.resize(minimal_pop_size, (Brain::new_dumb(3), 40.0, 0));
+            }
             self.genotypes = new;
         }
     }
