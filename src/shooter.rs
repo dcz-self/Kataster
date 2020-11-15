@@ -14,8 +14,8 @@ use bevy_rapier2d::{
     physics::RigidBodyHandleComponent,
     rapier::dynamics::RigidBodySet,
 };
-use rand::distributions::Bernoulli;
-use rand_distr::StandardNormal;
+use rand::distributions::{ Bernoulli, WeightedIndex };
+use rand_distr::{ Binomial, StandardNormal };
 use std::f32;
 use std::fmt;
 use std::io;
@@ -28,7 +28,7 @@ use super::geometry::{ angle_from, get_nearest };
 
 use rand::Rng;
 use rand::seq::IteratorRandom;
-use std::cmp::Ordering::Equal;
+use rand_distr::Distribution;
 use std::fmt::Write;
 use super::brain::Brain as _;
 
@@ -331,12 +331,11 @@ impl GenePool {
     }
 
     pub fn spawn(&self) -> Genotype {
-        // Best performers will get filtered out at generation swap,
-        // favoring them here seems to lead to magnification of flukes:
-        // they get repeated needlessly.
-        // While fluke's spawn will get filtered out,
-        // it fills out spaces that would have been used for genetic diversity.
-        let index = (0..self.genotypes.len()).choose(&mut rand::thread_rng()).unwrap();
+        // Give them a chance to reflect their fitness.
+        let distribution = WeightedIndex::new(
+            self.genotypes.iter().map(|(_k, v)| v + 80.0)
+        ).unwrap();
+        let index = distribution.sample(&mut rand::thread_rng());
         println!("Spawn offspring of {}", index);
         self.genotypes
             .get(index)
@@ -346,43 +345,27 @@ impl GenePool {
     }
 
     pub fn preserve(&mut self, genotype: Genotype, fitness: f64) {
-        self.preserved_total += 1;
-        println!("Preserving {}: {} (total {})", self.genotypes.len(), fitness, self.preserved_total);
         self.genotypes.push((genotype, fitness));
-        // Newly preserved begin to give some chances for the old generation to breed more than once.
-        // But don't blow up the gene pool at each generation.
-        if self.genotypes.len() > 2 * self.generation_size {
-            self.generations_spawned += 1;
-            // Skip one as a way for flukes to leave the system.
-            // They won't have elevated spawn within a generation, but will stick to many generations otherwise.
-            let mut candidates: Vec<_> = self.genotypes.iter().skip(1).map(|c| c.clone()).collect();
-            let average = candidates.iter()
-                .map(|(_, v)| *v)
-                .sum::<f64>() / candidates.len() as f64;
-            // Caution: new generation may score worse...
-            println!("New generation {} scores at least {}!", self.generations_spawned, average);
-            let new: Vec<_> = candidates.iter()
-                .filter(|(_, score)| score >= &average)
-                .map(|c| c.clone())
-                .collect();
-            if new.len() < 4 {
-                if new.len() < self.genotypes.len() / 2 {
-                    println!("Superflukes? Trying again, adding a blank.");
-                    self.genotypes.push((Brain::new_dumb(3), average));
-                    self.generation_size = self.genotypes.len();
-                } else {
-                    println!("Preserving 5 best for genetic diversity");
-                    let mut new = self.genotypes.clone();
-                    new.sort_by(|(_, score), (_, score1)| score1.partial_cmp(score).unwrap_or(Equal));
-                    new.resize(3, (Brain::new_dumb(3), average));
-                    self.generation_size = new.len();
-                    self.genotypes = new;
-                }
-            } else {
-                self.generation_size = new.len();
-                self.genotypes = new;
-                println!("{} breeds", self.generation_size);
-            }
+        
+        let ideal_pop_size = 15;
+        let minimal_pop_size = ideal_pop_size / 4;
+        let mut rng = rand::thread_rng();
+        
+        if self.genotypes.len() > ideal_pop_size * 2 / 3 {
+            // Overpopulation. Remove oldies which already had a go.
+            let dist = Binomial::new(
+                self.genotypes.len() as u64,
+                1.0 / (ideal_pop_size as f64),
+            ).unwrap();
+            let kill_count = dist.sample(&mut rng);
+            let mut new: Vec<_>
+                = self.genotypes.iter()
+                    .skip(kill_count as usize)
+                    .map(|c| c.clone())
+                    .collect();
+            println!("Killing {} oldies. Now pop {}.", kill_count, new.len());
+            new.resize(minimal_pop_size, (Brain::new_dumb(3), 40.0));
+            self.genotypes = new;
         }
     }
 }

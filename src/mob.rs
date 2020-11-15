@@ -15,6 +15,7 @@ use rand;
 use rand::distributions::{ Bernoulli, Uniform };
 use rand::distributions::weighted::WeightedIndex;
 use std::f32;
+use super::arena;
 use super::components::{ Borg, Mob };
 use super::state::{ GameState, RunState };
 
@@ -22,6 +23,7 @@ use super::state::{ GameState, RunState };
 use rand::distributions::Distribution;
 
 
+#[derive(Debug)]
 pub struct Inputs {
     angle_to_player: f32,
     distance_to_borg: f32,
@@ -42,12 +44,18 @@ impl Brain {
     /// input = angle
     pub fn calculate(&self, inputs: Inputs) -> f32 {
         self.weights.iter()
-            .zip([inputs.angle_to_player, inputs.distance_to_borg, 1.0].iter())
+            .zip(
+                [
+                    inputs.angle_to_player / f32::consts::PI,
+                    inputs.distance_to_borg / arena::ARENA_HEIGHT as f32,
+                    1.0, // bias
+                ].iter()
+            )
             .map(|(a, b)| a * b).sum()
     }
     
     fn randomize() -> Brain {
-        let distribution = Uniform::new(-10.0, 10.0);
+        let distribution = Uniform::new(-1.0, 1.0);
         Brain { weights: {
             (0..3).map(|_| distribution.sample(&mut rand::thread_rng()))
                 .collect()
@@ -124,23 +132,26 @@ pub fn think(
     for (body, mob) in mobs.iter() {
         let mut body = bodies.get_mut(body.handle()).unwrap();
         let point: Point2<f32> = body.position.inverse_transform_point(&borg_position);
-        let rot = Rotation2::rotation_between(
-            &Vector2::new(0.0, 1.0),
-            &Vector2::new(point.x, point.y)
-        );
-
-        let dist = (
-            Point2::from(body.position.translation.vector)
-                - borg_position)
-            .norm();
+        let inputs = Inputs {
+            angle_to_player: {
+                Rotation2::rotation_between(
+                    &Vector2::new(0.0, 1.0),
+                    &Vector2::new(point.x, point.y)
+                ).angle()
+            },
+            distance_to_borg: {
+                (
+                    Point2::from(body.position.translation.vector)
+                        - borg_position
+                ).norm()
+            },
+        };
+        //println!("{:?}", inputs);
         let turn_speed = mob.brain
-            .calculate(Inputs {
-                angle_to_player: rot.angle(),
-                distance_to_borg: dist,
-            })
+            .calculate(inputs)
             .min(mob.rotation_speed)
             .max(-mob.rotation_speed);
-
+        //println!("{}", turn_speed);
         body.wake_up(true);
         body.angvel = turn_speed;
         body.linvel = body.position.rotation.transform_vector(&Vector2::new(0.0, mob.speed));
