@@ -320,7 +320,10 @@ impl GenePool {
     pub fn new_eden() -> GenePool {
         GenePool {
             genotypes: vec![
-                (Brain::new_dumb(3), 10.0, 0), // High rate of initial breeding to Adam/Eve
+                // Let it be the main source of breeding
+                // until reaching ideal population's fraction.
+                // Expected total kills at population ten: 20. Be better than that.
+                (Brain::new_dumb(3), 40.0 * 20.0, 0),
             ],
             preserved_total: 1,
         }
