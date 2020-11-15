@@ -340,7 +340,7 @@ impl GenePool {
             .map(|(genotype, _, id)| (genotype.clone(), id))
             .unwrap();
         println!("Spawn offspring of {}", id);
-        genotype.mutate(0.125)
+        genotype.mutate(0.1)
     }
 
     pub fn preserve(&mut self, genotype: Genotype, fitness: f64) {
@@ -349,7 +349,7 @@ impl GenePool {
         println!("Pop {}", self.genotypes.len());
         self.preserved_total += 1;
         
-        let ideal_pop_size = 15;
+        let ideal_pop_size = 20;
         let minimal_pop_size = ideal_pop_size / 4;
         let mut rng = rand::thread_rng();
         
