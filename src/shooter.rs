@@ -350,7 +350,7 @@ impl GenePool {
         self.genotypes.push((genotype, fitness));
         // Newly preserved begin to give some chances for the old generation to breed more than once.
         // But don't blow up the gene pool at each generation.
-        if self.genotypes.len() >= 2 * self.generation_size {
+        if self.genotypes.len() > 2 * self.generation_size {
             self.generations_spawned += 1;
             // Skip one as a way for flukes to leave the system.
             // They won't have elevated spawn within a generation, but will stick to many generations otherwise.
@@ -365,10 +365,9 @@ impl GenePool {
                 .map(|c| c.clone())
                 .collect();
             if new.len() < 2 {
-                println!("Losers. Reshuffling.");
-                candidates.push((Brain::new_dumb(3), average));
-                let new = candidates.iter().rev().map(|c| c.clone()).collect();
-                self.genotypes = new;
+                println!("Superflukes? Trying again, adding a blank.");
+                self.genotypes.push((Brain::new_dumb(3), average));
+                self.generation_size = self.genotypes.len();
             } else {
                 self.generation_size = new.len();
                 self.genotypes = new;
