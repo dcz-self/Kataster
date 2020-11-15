@@ -312,40 +312,38 @@ pub struct GenePool {
     /// Mapping: breeding genotype, spawn rate
     /// Spawn rate should be derived from objective success
     /// In this case, it's seconds of survival
-    genotypes: Vec<(Genotype, f64)>,
-    generation_size: usize,
+    genotypes: Vec<(Genotype, f64, u64)>,
     preserved_total: u64,
-    generations_spawned: u64,
 }
 
 impl GenePool {
     pub fn new_eden() -> GenePool {
         GenePool {
             genotypes: vec![
-                (Brain::new_dumb(3), 10.0), // High rate of initial breeding to Adam/Eve
+                (Brain::new_dumb(3), 10.0, 0), // High rate of initial breeding to Adam/Eve
             ],
-            generation_size: 3,
-            generations_spawned: 0,
-            preserved_total: 0,
+            preserved_total: 1,
         }
     }
 
     pub fn spawn(&self) -> Genotype {
         // Give them a chance to reflect their fitness.
         let distribution = WeightedIndex::new(
-            self.genotypes.iter().map(|(_k, v)| v + 80.0)
+            self.genotypes.iter().map(|(_k, v, _id)| v + 80.0)
         ).unwrap();
         let index = distribution.sample(&mut rand::thread_rng());
-        println!("Spawn offspring of {}", index);
-        self.genotypes
+        let (genotype, id) = self.genotypes
             .get(index)
-            .map(|(genotype, chance)| genotype.clone())
-            .unwrap()
-            .mutate(0.125)
+            .map(|(genotype, _, id)| (genotype.clone(), id))
+            .unwrap();
+        println!("Spawn offspring of {}", id);
+        genotype.mutate(0.125)
     }
 
     pub fn preserve(&mut self, genotype: Genotype, fitness: f64) {
-        self.genotypes.push((genotype, fitness));
+        self.genotypes.push((genotype, fitness, self.preserved_total));
+        println!("Preserved as {} with score {}", self.preserved_total, fitness);
+        self.preserved_total += 1;
         
         let ideal_pop_size = 15;
         let minimal_pop_size = ideal_pop_size / 4;
@@ -364,7 +362,7 @@ impl GenePool {
                     .map(|c| c.clone())
                     .collect();
             println!("Killing {} oldies. Now pop {}.", kill_count, new.len());
-            new.resize(minimal_pop_size, (Brain::new_dumb(3), 40.0));
+            new.resize(minimal_pop_size, (Brain::new_dumb(3), 40.0, 0));
             self.genotypes = new;
         }
     }
