@@ -332,7 +332,7 @@ impl GenePool {
     pub fn spawn(&self) -> Genotype {
         // Give them a chance to reflect their fitness.
         let distribution = WeightedIndex::new(
-            self.genotypes.iter().map(|(_k, v, _id)| v + 80.0)
+            self.genotypes.iter().map(|(_k, v, _id)| v + 40.0)
         ).unwrap();
         let index = distribution.sample(&mut rand::thread_rng());
         let (genotype, id) = self.genotypes
