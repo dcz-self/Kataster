@@ -186,7 +186,7 @@ impl brain::Brain for Brain {
         let weight_deviation = 0.5;
         let weight_rate = 1.0;
         let weight_dist = Bernoulli::new(strength * weight_rate).unwrap();
-        let connect_rate = 0.1;
+        let connect_rate = 0.15;
         let disconnect_rate = 0.25;
         let connect_dist = Bernoulli::new(strength * connect_rate).unwrap();
         let disconnect_dist = Bernoulli::new(strength * disconnect_rate).unwrap();
