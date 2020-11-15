@@ -22,8 +22,9 @@ use super::state::{ GameState, RunState };
 use rand::distributions::Distribution;
 
 
-pub struct BrainInputs {
+pub struct Inputs {
     angle_to_player: f32,
+    distance_to_borg: f32,
 }
 
 pub struct BrainCommands {
@@ -39,31 +40,27 @@ pub struct Brain {
 
 impl Brain {
     /// input = angle
-    pub fn calculate(&self, inputs: f32) -> f32 {
-        self.weights[0] + self.weights[1] * inputs
+    pub fn calculate(&self, inputs: Inputs) -> f32 {
+        self.weights.iter()
+            .zip([inputs.angle_to_player, inputs.distance_to_borg, 1.0].iter())
+            .map(|(a, b)| a * b).sum()
     }
     
     fn randomize() -> Brain {
-        let distribution = Uniform::new(-100.0, 100.0);
+        let distribution = Uniform::new(-10.0, 10.0);
         Brain { weights: {
-            (0..2).map(|_| distribution.sample(&mut rand::thread_rng()))
+            (0..3).map(|_| distribution.sample(&mut rand::thread_rng()))
                 .collect()
         }}
     }
 
     /// Alter values based on gene pool variance among the successful ones
-    fn mutate(&self, variances: &Variances) -> Brain {
+    fn mutate(&self) -> Brain {
         self.clone()
     }
 }
 
 pub type Genotype = Brain;
-
-/// Same shape as Genotype, but weights reflect variances in values.
-pub struct Variances {
-    // body
-    // brain
-}
 
 #[derive(Debug)]
 pub struct GenePool {
@@ -132,8 +129,15 @@ pub fn think(
             &Vector2::new(point.x, point.y)
         );
 
+        let dist = (
+            Point2::from(body.position.translation.vector)
+                - borg_position)
+            .norm();
         let turn_speed = mob.brain
-            .calculate(rot.angle())
+            .calculate(Inputs {
+                angle_to_player: rot.angle(),
+                distance_to_borg: dist,
+            })
             .min(mob.rotation_speed)
             .max(-mob.rotation_speed);
 

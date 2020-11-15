@@ -28,6 +28,7 @@ use super::geometry::{ angle_from, get_nearest };
 
 use rand::Rng;
 use rand::seq::IteratorRandom;
+use std::cmp::Ordering::Equal;
 use std::fmt::Write;
 use super::brain::Brain as _;
 
@@ -364,10 +365,19 @@ impl GenePool {
                 .filter(|(_, score)| score >= &average)
                 .map(|c| c.clone())
                 .collect();
-            if new.len() < 5 {
-                println!("Superflukes? Trying again, adding a blank.");
-                self.genotypes.push((Brain::new_dumb(3), average));
-                self.generation_size = self.genotypes.len();
+            if new.len() < 4 {
+                if new.len() < self.genotypes.len() / 2 {
+                    println!("Superflukes? Trying again, adding a blank.");
+                    self.genotypes.push((Brain::new_dumb(3), average));
+                    self.generation_size = self.genotypes.len();
+                } else {
+                    println!("Preserving 5 best for genetic diversity");
+                    let mut new = self.genotypes.clone();
+                    new.sort_by(|(_, score), (_, score1)| score1.partial_cmp(score).unwrap_or(Equal));
+                    new.resize(3, (Brain::new_dumb(3), average));
+                    self.generation_size = new.len();
+                    self.genotypes = new;
+                }
             } else {
                 self.generation_size = new.len();
                 self.genotypes = new;
