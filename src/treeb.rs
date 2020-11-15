@@ -601,7 +601,7 @@ mod tests {
         let mut brain = Brain {
             nodes: Digraph::from(vec![
                 Node::Input(0),
-                Node::MemoryRead(0), // should be 0 initially
+                Node::MemoryRead(0),
                 Node::Output(
                     0,
                     Neuron {
@@ -613,9 +613,9 @@ mod tests {
                     },
                 ),
             ]),
-            memories: vec![0.0],
+            memories: vec![5.0],
         };
-        assert_eq!(brain.process(vec![4.0, 5.0]), vec![8.0]);
+        assert_eq!(brain.process(vec![4.0]), vec![-7.0]);
     }
 
     #[test]
