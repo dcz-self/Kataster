@@ -14,6 +14,7 @@ use bevy_rapier2d::na::{ Point2, Rotation2, Vector2 };
 use rand;
 use rand::distributions::{ Bernoulli, Uniform };
 use rand::distributions::weighted::WeightedIndex;
+use rand_distr::StandardNormal;
 use std::f32;
 use super::arena;
 use super::components::{ Borg, Mob };
@@ -21,6 +22,7 @@ use super::state::{ GameState, RunState };
 
 
 use rand::distributions::Distribution;
+use rand::Rng;
 
 
 #[derive(Debug)]
@@ -64,7 +66,12 @@ impl Brain {
 
     /// Alter values based on gene pool variance among the successful ones
     fn mutate(&self) -> Brain {
-        self.clone()
+        let mut rng = &mut rand::thread_rng();
+        Brain { weights: {
+            self.weights.iter()
+                .map(|v| v + rng.sample::<f32, _>(StandardNormal) * 0.05)
+                .collect()
+        }}
     }
 }
 
@@ -81,10 +88,10 @@ impl GenePool {
     pub fn new_eden() -> GenePool {
         GenePool {
             genotypes: vec![
-                //(Brain { weights: vec![f32::consts::TAU / 10.0, 1.0] }, 1.0), // Adam
-                //(Brain { weights: vec![0.0, 1.0] }, 1.0),// Eve
+//                (Brain { weights: vec![f32::consts::TAU, 0.0, 1.0] }, 1.0), // Adam
+                (Brain { weights: vec![10.0, 0.0, 0.0] }, 1.0),// Eve
             ],
-            blank_frequency: 0.1,
+            blank_frequency: 0.0,
         }
     }
 
