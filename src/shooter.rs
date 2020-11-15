@@ -364,7 +364,7 @@ impl GenePool {
                 .filter(|(_, score)| score >= &average)
                 .map(|c| c.clone())
                 .collect();
-            if new.len() < 2 {
+            if new.len() < 5 {
                 println!("Superflukes? Trying again, adding a blank.");
                 self.genotypes.push((Brain::new_dumb(3), average));
                 self.generation_size = self.genotypes.len();
