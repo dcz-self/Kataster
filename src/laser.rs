@@ -41,7 +41,7 @@ pub fn spawn(
         transform.translation.clone(),
         transform.rotation.clone()
     );
-    let v = isometry.rotation * Vector2::y() * 50.0;
+    let v = isometry.rotation * Vector2::y() * 200.0;
     let body = RigidBodyBuilder::new_dynamic()
         .position(isometry)
         .linvel(v.x, v.y);
