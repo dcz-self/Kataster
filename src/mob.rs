@@ -91,7 +91,7 @@ impl GenePool {
 //                (Brain { weights: vec![f32::consts::TAU, 0.0, 1.0] }, 1.0), // Adam
                 (Brain { weights: vec![10.0, 0.0, 0.0] }, 1.0),// Eve
             ],
-            blank_frequency: 0.0,
+            blank_frequency: 0.1,
         }
     }
 
