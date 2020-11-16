@@ -26,6 +26,7 @@ use super::components::{ weapon_trigger, AttachedToEntity, Borg, LooksAt, Mob, W
 use super::geometry::{ angle_from, get_nearest };
 
 
+use crate::brain::MixableGenotype;
 use rand::Rng;
 use rand::seq::IteratorRandom;
 use rand_distr::Distribution;
@@ -226,6 +227,46 @@ impl brain::Brain for Brain {
     }
 }
 
+impl brain::MixableGenotype for Brain {
+    /// Mix by randomly choosing gene supplier.
+    fn mix_with(&self, other: &Brain) -> Brain {
+        let mut rng = rand::thread_rng();
+        let parent_dist = Bernoulli::new(0.5).unwrap();
+
+        let mut mix_neuron = |n0: &Neuron, n1: &Neuron| {
+            Neuron {
+                weights: {
+                    n0.weights.iter()
+                        .zip(n1.weights.iter())
+                        .map(|(w0, w1)| *match parent_dist.sample(&mut rng) {
+                            true => w0,
+                            false => w1,
+                        })
+                        .collect()
+                },
+                activation: match parent_dist.sample(&mut rng) {
+                    true => n0.activation.clone(),
+                    false => n1.activation.clone(),
+                },
+            }
+        };
+
+        let mut mix_layer = |layer0: &[Neuron], layer1: &[Neuron]| {
+            layer0.iter()
+                .zip(layer1.iter())
+                .map(|(n0, n1)| mix_neuron(n0, n1))
+                .collect::<Vec<_>>()
+        };
+        
+        Brain {
+            hidden_layer: mix_layer(&self.hidden_layer, &other.hidden_layer),
+            output_layer: mix_layer(&self.output_layer, &other.output_layer),
+            mut_count: self.mut_count + other.mut_count,
+            ..self.clone()
+        }
+    }
+}
+
 pub struct Inputs {
     //mob_distance: f32,
     mob_rel_angle: f32,
@@ -326,7 +367,7 @@ impl GenePool {
         }
     }
 
-    pub fn spawn(&self) -> Genotype {
+    pub fn spawn_sexless(&self) -> Genotype {
         // Give them a chance to reflect their fitness.
         let distribution = WeightedIndex::new(
             self.genotypes.iter().map(|(_k, v, _id)| v + 40.0)
@@ -338,6 +379,20 @@ impl GenePool {
             .unwrap();
         println!("Spawn offspring of {}", id);
         genotype.mutate(0.12)
+    }
+    
+    /// Spawn hermaphoditic
+    pub fn spawn(&self) -> Genotype {
+        let distribution = WeightedIndex::new(
+            self.genotypes.iter().map(|(_k, v, _id)| v + 40.0)
+        ).unwrap();
+        let index0 = distribution.sample(&mut rand::thread_rng());
+        let index1 = distribution.sample(&mut rand::thread_rng());
+        
+        let (genotype0, _w, id0) = self.genotypes.get(index0).unwrap();
+        let (genotype1, _w, id1) = self.genotypes.get(index1).unwrap();
+        println!("Spawn offspring of {} and {}", id0, id1);
+        genotype0.mix_with(genotype1).mutate(0.06)
     }
 
     pub fn preserve(&mut self, genotype: Genotype, fitness: f64) {

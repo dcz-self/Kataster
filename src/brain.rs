@@ -14,6 +14,11 @@ pub trait Brain {
     fn mutate(self, strength: f64) -> Self;
 }
 
+/// Can mix its genetic code with another.
+pub trait MixableGenotype {
+    fn mix_with(&self, other: &Self) -> Self;
+}
+
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Function {
