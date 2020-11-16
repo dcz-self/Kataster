@@ -8,13 +8,15 @@
 use bevy::asset;
 use bevy::asset::Handle;
 use bevy::ecs::{ Commands, Res, ResMut };
-use bevy::sprite::ColorMaterial;
+use bevy::math::Vec2;
+use bevy::sprite::{ ColorMaterial, TextureAtlas };
 
 
 const ASSET_DIR: &str = "./assets/";
 
 pub struct Assets {
     pub projectile: Option<Handle<ColorMaterial>>,
+    pub louse: Option<Handle<TextureAtlas>>,
     pub removal: Option<Handle<ColorMaterial>>,
 }
 
@@ -22,11 +24,15 @@ pub fn setup(
     mut commands: Commands,
     asset_server: Res<asset::AssetServer>,
     mut materials: ResMut<asset::Assets<ColorMaterial>>,
+    mut texture_atlases: ResMut<asset::Assets<TextureAtlas>>,
 ) {
     let projectile = asset_server.load("laserRed07.png");
     let removal = asset_server.load("flash00.png");
+    let louse_texture = asset_server.load("louse.png");
+    let louse = TextureAtlas::from_grid(louse_texture, Vec2::new(64.0, 64.0), 1, 1);
     commands.insert_resource(Assets {
         projectile: Some(materials.add(projectile.into())),
         removal: Some(materials.add(removal.into())),
+        louse: Some(texture_atlases.add(louse)),
     });
 }
