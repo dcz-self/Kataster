@@ -72,7 +72,7 @@ fn spawn_borg(
     let texture_handle: Handle<_> = asset_server.load("survivor-shoot_rifle_0.png");
     let arrow = asset_server.load("arrow.png");
     let body = RigidBodyBuilder::new_dynamic();
-    let collider = ColliderBuilder::ball(1.0);
+    let collider = ColliderBuilder::ball(5.0);
 
     commands
         .spawn(SpriteComponents {
