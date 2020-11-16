@@ -281,7 +281,7 @@ pub fn think(
         ));
         let weapons = weapons.iter_mut().filter(|(_w, _t, parent)| parent.0 == entity);
         for (mut weapon, mut transform, _parent) in weapons {
-            let abs_angle = body.position.rotation.angle() + outputs.aim_rel_angle * f32::consts::PI;
+            let abs_angle = body.position.rotation.angle() + outputs.aim_rel_angle.max(-1.0).min(1.0) * f32::consts::PI;
             transform.rotation = Quat::from_axis_angle(Vec3::new(0.0, 0.0, 1.0), abs_angle);
             if outputs.shoot {
                 weapon_trigger(&mut weapon, &transform, &mut commands, &asset_server, &assets, &audio_output);
@@ -340,7 +340,7 @@ impl GenePool {
             .map(|(genotype, _, id)| (genotype.clone(), id))
             .unwrap();
         println!("Spawn offspring of {}", id);
-        genotype.mutate(0.1)
+        genotype.mutate(0.12)
     }
 
     pub fn preserve(&mut self, genotype: Genotype, fitness: f64) {
