@@ -52,6 +52,7 @@ pub fn spawn(
             transform.translation.y(),
             -4.0,
         ),
+        rotation: transform.rotation.clone(),
         scale: Vec3::splat(1.0 / 2.0),
         ..Default::default()
     };
