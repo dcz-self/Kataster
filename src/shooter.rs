@@ -367,7 +367,7 @@ impl GenePool {
         }
     }
 
-    pub fn spawn_sexless(&self) -> Genotype {
+    fn spawn_sexless(&self) -> Genotype {
         // Give them a chance to reflect their fitness.
         let distribution = WeightedIndex::new(
             self.genotypes.iter().map(|(_k, v, _id)| v + 40.0)
@@ -378,11 +378,17 @@ impl GenePool {
             .map(|(genotype, _, id)| (genotype.clone(), id))
             .unwrap();
         println!("Spawn offspring of {}", id);
-        genotype.mutate(0.12)
+        genotype.mutate(self.get_mut_rate())
+    }
+
+    fn get_mut_rate(&self) -> f64 {
+        // Should probably be related to standard deviation of the population.
+        // Instead just increase the rate when population is small.
+        0.12 * (15.0 / (self.genotypes.len() as f64 + 0.1)).max(1.0)
     }
     
     /// Spawn hermaphoditic
-    pub fn spawn(&self) -> Genotype {
+    fn spawn_herm(&self) -> Genotype {
         let distribution = WeightedIndex::new(
             self.genotypes.iter().map(|(_k, v, _id)| v + 40.0)
         ).unwrap();
@@ -392,7 +398,13 @@ impl GenePool {
         let (genotype0, _w, id0) = self.genotypes.get(index0).unwrap();
         let (genotype1, _w, id1) = self.genotypes.get(index1).unwrap();
         println!("Spawn offspring of {} and {}", id0, id1);
-        genotype0.mix_with(genotype1).mutate(0.06)
+        // Mutation rate shouldn't be too big;
+        // there's enough mess due to sexual reproduction.
+        genotype0.mix_with(genotype1).mutate(self.get_mut_rate() / 1.5)
+    }
+
+    pub fn spawn(&self) -> Genotype {
+        self.spawn_sexless()
     }
 
     pub fn preserve(&mut self, genotype: Genotype, fitness: f64) {
