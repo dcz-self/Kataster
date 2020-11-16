@@ -84,7 +84,7 @@ fn spawn_borg(
         })
         .with(Borg {
             rotation_speed: std::f32::consts::TAU,
-            speed: 10.0,
+            speed: 30.0,
             life: START_LIFE,
             time_alive: 0.0,
             score: 0,
