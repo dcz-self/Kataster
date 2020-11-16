@@ -115,30 +115,40 @@ pub struct Damage {
     pub value: u32,
 }
 
-pub fn swivel_at(
-    mut query: Query<(&AttachedToEntity, &LooksAt, Mut<GlobalTransform>, Mut<Transform>)>,
+
+pub fn follow(
+    mut query: Query<(&AttachedToEntity, Mut<GlobalTransform>, Mut<Transform>)>,
     entities: Query<Without<AttachedToEntity, &GlobalTransform>>,
 ) {
-    for (target_entity, looks_at, mut gtransform, mut transform) in query.iter_mut() {
+    for (target_entity, mut gtransform, mut transform) in query.iter_mut() {
         if let Ok(parent_transform) = entities.get(target_entity.0) {
             transform.translation = parent_transform.translation.clone();
             // Rapier is broken by not updating deterministically,
             // so let's work around transforms and just update them manually.
             gtransform.translation = parent_transform.translation.clone();
-            let translation = na::Translation2::new(
-                transform.translation.x(),
-                transform.translation.y(),
-            );
-            // Lol, this is so inefficient it's funny
-            let point = translation.inverse_transform_point(&looks_at.0);
-            let rot = Rotation2::rotation_between(
-                &Vector2::new(0.0, 1.0),
-                &Vector2::new(point.x, point.y)
-            );
-
-            let c = UnitComplex::from_rotation_matrix(&rot);
-            transform.rotation = Quat::from_axis_angle(Vec3::new(0.0, 0.0, 1.0), c.angle());
-            gtransform.rotation = Quat::from_axis_angle(Vec3::new(0.0, 0.0, 1.0), c.angle());
         }
+    }
+}
+
+pub fn swivel_at(
+    mut query: Query<(&LooksAt, Mut<GlobalTransform>, Mut<Transform>)>,
+) {
+    for (looks_at, mut gtransform, mut transform) in query.iter_mut() {
+        // Rapier is broken by not updating deterministically,
+        // so let's work around transforms and just update them manually.
+        let translation = na::Translation2::new(
+            transform.translation.x(),
+            transform.translation.y(),
+        );
+        // Lol, this is so inefficient it's funny
+        let point = translation.inverse_transform_point(&looks_at.0);
+        let rot = Rotation2::rotation_between(
+            &Vector2::new(0.0, 1.0),
+            &Vector2::new(point.x, point.y)
+        );
+
+        let c = UnitComplex::from_rotation_matrix(&rot);
+        transform.rotation = Quat::from_axis_angle(Vec3::new(0.0, 0.0, 1.0), c.angle());
+        gtransform.rotation = Quat::from_axis_angle(Vec3::new(0.0, 0.0, 1.0), c.angle());
     }
 }

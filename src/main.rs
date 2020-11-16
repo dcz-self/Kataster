@@ -73,6 +73,7 @@ fn main() {
         .add_system(player::point_at_mouse.system())
         .add_system(player::keyboard_walk.system())
         .add_system_to_stage("FOLLOW", components::swivel_at.system())
+        .add_system_to_stage("FOLLOW", components::follow.system())
         .add_system_to_stage("SHOOT", player::mouse_shoot.system())
         // TODO: those should both operate on a copy of mob positions,
         // otherwise one will use updated values.
