@@ -60,11 +60,11 @@ fn dumb_neuron(synapse_count: u8) -> Neuron {
 }
 
 
-fn dumb_hidden_layer(num_neurons: u8, input_count: u8) -> Vec<Neuron> {
-    (0..input_count)
+fn dumb_hidden_layer(num_neurons: u8, output_count: u8) -> Vec<Neuron> {
+    (0..output_count)
         .map(|_| dumb_neuron(INPUT_COUNT))
         .chain({
-            (input_count..num_neurons)
+            (output_count..num_neurons)
                 .map(|_| unconnected_neuron(INPUT_COUNT))
         })
         .collect()
@@ -97,8 +97,8 @@ pub struct Brain {
 impl Brain {
     pub fn new_dumb(hidden_neurons: u8) -> Brain {
         Brain {
-            hidden_layer: dumb_hidden_layer(hidden_neurons, INPUT_COUNT),
-            output_layer: dumb_output_layer(2, hidden_neurons),
+            hidden_layer: dumb_hidden_layer(hidden_neurons, 3),
+            output_layer: dumb_output_layer(3, hidden_neurons),
             mut_count: 0,
         }
     }
@@ -176,7 +176,7 @@ impl brain::Brain for Brain {
         let hidden = process_layer(&self.hidden_layer, inputs);
         let outputs = process_layer(&self.output_layer, hidden);
         Outputs {
-            walk: false,
+            walk: outputs[2],
             turn: outputs[1],
             shoot: true,
             aim_rel_angle: outputs[0],
@@ -191,7 +191,7 @@ impl brain::Brain for Brain {
         let disconnect_rate = 0.25;
         let connect_dist = Bernoulli::new(strength * connect_rate).unwrap();
         let disconnect_dist = Bernoulli::new(strength * disconnect_rate).unwrap();
-        let activation_rate = 0.3;
+        let activation_rate = 0.4;
         let activation_dist = Bernoulli::new(strength * activation_rate).unwrap();
         let activation_options = [Function::Linear, Function::Step01, Function::Gaussian, Function::ReLU, Function::Logistic];
         let mut rng = rand::thread_rng();
@@ -235,7 +235,7 @@ pub struct Inputs {
 const INPUT_COUNT: u8 = 2;
 
 pub struct Outputs {
-    walk: bool,
+    walk: f32,
     /// Relative to walking direction
     turn: f32,
     shoot: bool,
@@ -274,10 +274,7 @@ pub fn think(
         body.angvel = (outputs.turn * borg.rotation_speed).min(borg.rotation_speed).max(-borg.rotation_speed);
         body.linvel = body.position.rotation.transform_vector(&Vector2::new(
             0.0,
-            borg.speed * match outputs.walk {
-                true => 1.0,
-                false => 0.0,
-            }
+            borg.speed * outputs.walk.max(-1.0).min(1.0)
         ));
         let weapons = weapons.iter_mut().filter(|(_w, _t, parent)| parent.0 == entity);
         for (mut weapon, mut transform, _parent) in weapons {
