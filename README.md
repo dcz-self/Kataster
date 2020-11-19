@@ -10,9 +10,9 @@ Based on [Kataster](https://github.com/Bobox214/Kataster).
 
 ## License
 
-The entire code may be distributed under AGPL 3.0 or higher, at your leisure.
+The entire code may be distributed under AGPL 3.0 or higher, at your leisure. License text in the [`agpl-3.0.md` file](agpl-3.0.md).
 
-In addition, remaining Kataster pieces are licensed under MIT.
+In addition, remaining Kataster pieces are licensed under MIT. License text in the [`MIT.txt` file](MIT.txt).
 
 https://www.rust-lang.org/
 
