@@ -55,6 +55,21 @@ pub struct FedEvents {
     event_reader: EventReader<BrainFed>,
 }
 
+fn val_to_color(val: f32) -> Color {
+    let calm = Vec3::new(0.2, 0.2, 0.2);
+    let high = Vec3::new(1.0, 1.0, 0.3);
+    let anti = Vec3::new(0.3, 0.8, 1.0);
+    let norm = val / (1.0 + val.abs()); // softsign. Starts fast and doesn't stop increasing much after 1.0.
+    let color = calm
+        + if norm > 0.0 {
+            high - calm
+        } else {
+            calm - anti
+        }
+        * norm;
+    Color::rgb_linear(color[0], color[1], color[2])
+}
+
 fn draw_brain(
     commands: &mut ChildBuilder,
     asset_server: &Res<AssetServer>,
@@ -68,8 +83,7 @@ fn draw_brain(
     let pad = 20.0;
     
     let red = materials.add(Color::rgb(0.8, 0.0, 0.0).into());
-    let green = materials.add(Color::rgb(0.0, 0.4, 0.0).into());
-    let blue = materials.add(Color::rgb(0.0, 0.0, 0.6).into());
+    let blue = materials.add(Color::rgb(0.0, 0.4, 0.0).into());
     
     let mut draw_layer = |layer: &[Neuron], num| {
         for (outidx, neuron) in layer.iter().enumerate() {
@@ -144,7 +158,7 @@ fn draw_brain(
         for (idx, input) in inputs.into_iter().enumerate() {
             commands
                 .spawn(primitive(
-                    green.clone(),
+                    materials.add(val_to_color(input).into()).clone(),
                     &mut meshes,
                     ShapeType::Circle(10.0),
                     TessellationMode::Fill(&FillOptions::default()),
