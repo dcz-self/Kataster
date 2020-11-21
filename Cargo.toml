@@ -11,6 +11,7 @@ edition = "2018"
 [dependencies]
 anyhow = "1.*"
 bevy = "0.3.*"
+bevy_prototype_lyon = "0.1.*"
 bevy_rapier2d = "0.5.*"
 byteorder = "1.*"
 image = "0.23.*"

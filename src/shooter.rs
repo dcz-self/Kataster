@@ -4,6 +4,7 @@
  SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
+use bevy::app::Events;
 use bevy::asset::AssetServer;
 use bevy::audio::Audio;
 use bevy::ecs::{ Commands, Entity, Mut, Query, Res, ResMut, Without };
@@ -89,8 +90,9 @@ fn dumb_output_layer(num_outputs: usize, synapse_count: u8) -> Vec<Neuron> {
 /// Uses a single hidden layer of neurons
 #[derive(Debug, Clone, PartialEq)]
 pub struct Brain {
-    hidden_layer: Vec<Neuron>,
-    output_layer: Vec<Neuron>,
+    // TODO: remove those pubs. They are needed for drawing, which should be here anyway.
+    pub hidden_layer: Vec<Neuron>,
+    pub output_layer: Vec<Neuron>,
     // TODO: remove
     mut_count: u16,
 }
@@ -103,7 +105,11 @@ impl Brain {
             mut_count: 0,
         }
     }
-    
+
+    pub fn normalize_inputs(inputs: Inputs) -> Vec<f32> {
+        vec![inputs.mob_rel_angle, inputs.time_survived]
+    }
+
     pub fn pretty_print(&self) -> Result<String, fmt::Error> {
         let mut f = String::new();
         fn fmt_neurons(layer: &[Neuron], f: &mut String) -> fmt::Result {
@@ -173,7 +179,7 @@ impl brain::Brain for Brain {
     type Inputs = Inputs;
     type Outputs = Outputs;
     fn process(&mut self, inputs: Inputs) -> Outputs {
-        let inputs = vec![inputs.mob_rel_angle, inputs.time_survived, 1.0];
+        let inputs = Brain::normalize_inputs(inputs);
         let hidden = process_layer(&self.hidden_layer, inputs);
         let outputs = process_layer(&self.output_layer, hidden);
         Outputs {
@@ -267,6 +273,7 @@ impl brain::MixableGenotype for Brain {
     }
 }
 
+#[derive(Clone)]
 pub struct Inputs {
     //mob_distance: f32,
     mob_rel_angle: f32,
@@ -285,8 +292,14 @@ pub struct Outputs {
 }
 
 
+pub struct BrainFed {
+    pub entity: Entity,
+    pub inputs: Inputs,
+}
+
 pub fn think(
     mut commands: Commands,
+    mut brain_fed_events: ResMut<Events<BrainFed>>,
     asset_server: Res<AssetServer>,
     assets: Res<assets::Assets>,
     audio_output: Res<Audio>,
@@ -306,10 +319,12 @@ pub fn think(
         let nearest = get_nearest(&body.position.translation.vector.into(), &mob_positions)
             .unwrap_or(Point2::new(0.0, 0.0));
         let rot = angle_from(&body.position, &nearest);
-        let outputs = brain.process(Inputs {
+        let inputs = Inputs {
             mob_rel_angle: rot / f32::consts::PI,
             time_survived: borg.time_alive,
-        });
+        };
+        brain_fed_events.send(BrainFed { entity, inputs: inputs.clone() });
+        let outputs = brain.process(inputs);
         // Apply outputs. Might be better to do this in a separate step.
         body.wake_up(true);
         body.angvel = (outputs.turn * borg.rotation_speed).min(borg.rotation_speed).max(-borg.rotation_speed);

@@ -24,6 +24,7 @@ mod treeb;
 mod ui;
 #[macro_use]
 mod util;
+mod viewer;
 
 use arena::*;
 use bobox::RapierUtilsPlugin;
@@ -47,8 +48,10 @@ fn main() {
         .add_resource(ClearColor(Color::rgb_u8(5, 5, 10)))
         .add_event::<AsteroidSpawnEvent>()
         .add_event::<ExplosionSpawnEvent>()
+        .add_event::<shooter::BrainFed>()
         .add_plugin(RapierPhysicsPlugin)
         .add_plugin(fps::Plugin)
+        .add_plugin(viewer::Plugin)
         .add_plugins(DefaultPlugins)
         .init_asset_loader::<paq::Loader>()
         .add_resource(RapierConfiguration {
