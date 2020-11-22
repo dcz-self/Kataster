@@ -2,23 +2,39 @@
 
 An experiment with evolving creatures.
 
-The creatures breed and try to flood you. Whoever survives before being shot is allowed to breed again.
+The creatures breed and try to flood you. Whoever survives before being shot or eaten is allowed to breed again.
 
 Based on [Kataster](https://github.com/Bobox214/Kataster).
 
-## Running
+Inspired by the unmatched freeware version of [Crimsonland](http://phoenix.ee/old-crimsonland-1-02-1-3-0-1-4-0/).
+
+![Fleas](https://porcupinefactory.org/data/breedmatic0.2_flood.png)
+
+If you like it, let me know! I'm dcz on freenode IRC, and my email is breedm.dcz@porcupinefactory.org .
+
+## Breeding
 
 Get assets from https://porcupinefactory.org/data/assets.zip and unpack them into the `assets` directory.
 
-Then run the simulation:
+Then you can start the breeding process:
 
 ```
 cargo run --release
 ```
 
-Let it run for a while. Interesting shooters evolve usually around the 100th attempt.
+Both the shooters and the fleas will start breeding. Fleas are pre-seeded, so they will not get much smarter.
 
-### Looking into the brain
+But the shooters… They start out uncoordinated. As they mutate, and as fleas take away the dumbest, only the high scoring one will remain in the gene pool.
+
+After about 100 attempts, the gene pool will get honed, and you should be seeing good shooters regularly.
+
+[Video of a shooter after 6 lucky mutations](https://porcupinefactory.org/data/breedmatic0.2_goodshooter.webm)
+
+## Neurons
+
+Brains of all creatures are neural networks, and the connections between neurons, and neurons' activation funcions are what evolves.
+
+### Open brain
 
 The bottom left corner is the live view of the brain of the shooter.
 
@@ -28,11 +44,21 @@ Signal strength is expressed with color: gray means relaxed (0), yellow active (
 
 Some connections have no circle at the top: those are "bias" connections. The source strength is always 1.
 
-### Neurons
+### Neuron anatomy
 
 Every neuron's task is to sum up incoming signals, and then to activate based on the result. Most neurons activate proportionally, but there is also the sigmoid activation (result never exceeds [0, 1]), the step (anything below 0 turns into 0, anything above activates to 1), ReLU (anything below 0 is shunted to 0), and Gaussian (the farther the sum from 0, the farther the activation from 1).
 
 So don't be surprised that a neuron with no connections is suddenly always active!
+
+## FAQ
+
+### I want to be the shooter!
+
+The mode is currently commented out :P
+
+### It's slow/leaks memory!
+
+Yes. Let me know you care and I may fix it.
 
 ### Interpreting the text
 

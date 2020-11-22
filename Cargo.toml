@@ -1,6 +1,6 @@
 [package]
 name = "breedmatic"
-version = "0.1.0"
+version = "0.2.0"
 authors = [
     "Dorota Czaplejewicz <gihuac.dcz@porcupinefactory.org>",
     "Boris Boutillier <boris.boutillier@gmail.com>"
