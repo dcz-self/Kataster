@@ -57,7 +57,7 @@ pub struct FedEvents {
 }
 
 fn val_to_color(val: f32) -> Color {
-    let calm = Vec3::new(0.2, 0.2, 0.2);
+    let calm = Vec3::new(0.1, 0.1, 0.1);
     let high = Vec3::new(1.0, 1.0, 0.3);
     let anti = Vec3::new(0.3, 0.8, 1.0);
     let norm = val / (1.0 + val.abs()); // softsign. Starts fast and doesn't stop increasing much after 1.0.
@@ -95,16 +95,56 @@ fn draw_brain(
                 })
         );
 
-    let red = materials.add(Color::rgb(0.8, 0.0, 0.0).into());
-    let blue = materials.add(Color::rgb(0.0, 0.4, 0.0).into());
+    let signals = brain.find_signals(inputs.clone());
 
-    for signal in brain.find_signals(inputs.clone()) {
+    // Draw lines underneath
+    for signal in &signals {
+        match signal {
+            shooter::Signal::Synapse { value, from, to } => {
+                let (from_num, from_layer) = node_positions.get(from).unwrap();
+                let (to_num, to_layer) = node_positions.get(to).unwrap();
+                let mut builder = PathBuilder::new();
+                builder.line_to(point(
+                    horz_space * *to_num as f32,
+                    -vert_space * *to_layer as f32,
+                ));
+                builder.line_to(point(
+                    horz_space * *from_num as f32,
+                    -vert_space * *from_layer as f32,
+                ));
+                let path = builder.build();
+                commands
+                    .spawn(path.stroke(
+                        materials.add(val_to_color(*value).into()).clone(),
+                        &mut meshes,
+                        Vec3::new(0.0, 0.0, 0.0),
+                        &StrokeOptions::default().with_line_width(2.0),
+                    ))
+                    .with(Preview)
+                    .with(Node::default())
+                    // Line anchored at top left now
+                    .with(Style {
+                        position_type: PositionType::Absolute,
+                        position: Rect {
+                            top: Val::Px(pad),
+                            left: Val::Px(pad),
+                            ..Default::default()
+                        },
+                        ..Default::default()
+                    });
+            },
+            _ => {}, // draw later
+        }
+    }
+
+    // Draw nodes on top.
+    for signal in &signals {
         match signal {
             shooter::Signal::Input { id, value } => {
-                let (num, layer) = node_positions.get(&id).unwrap();
+                let (num, layer) = node_positions.get(id).unwrap();
                 commands
                     .spawn(primitive(
-                        materials.add(val_to_color(value).into()).clone(),
+                        materials.add(val_to_color(*value).into()).clone(),
                         &mut meshes,
                         ShapeType::Circle(10.0),
                         TessellationMode::Fill(&FillOptions::default()),
@@ -124,10 +164,10 @@ fn draw_brain(
                     });
             },
             shooter::Signal::Neuron { id, raw_value: _, activation_value } => {
-                let (num, layer) = node_positions.get(&id).unwrap();
+                let (num, layer) = node_positions.get(id).unwrap();
                 commands
                     .spawn(primitive(
-                        materials.add(val_to_color(activation_value).into()).clone(),
+                        materials.add(val_to_color(*activation_value).into()).clone(),
                         &mut meshes,
                         ShapeType::Circle(10.0),
                         TessellationMode::Fill(&FillOptions::default()),
@@ -146,39 +186,7 @@ fn draw_brain(
                         ..Default::default()
                     });
             },
-            shooter::Signal::Synapse { value, from, to } => {
-                let (from_num, from_layer) = node_positions.get(&from).unwrap();
-                let (to_num, to_layer) = node_positions.get(&to).unwrap();
-                let mut builder = PathBuilder::new();
-                builder.line_to(point(
-                    horz_space * *to_num as f32,
-                    -vert_space * *to_layer as f32,
-                ));
-                builder.line_to(point(
-                    horz_space * *from_num as f32,
-                    -vert_space * *from_layer as f32,
-                ));
-                let path = builder.build();
-                commands
-                    .spawn(path.stroke(
-                        materials.add(val_to_color(value).into()).clone(),
-                        &mut meshes,
-                        Vec3::new(0.0, 0.0, 0.0),
-                        &StrokeOptions::default().with_line_width(2.0),
-                    ))
-                    .with(Preview)
-                    .with(Node::default())
-                    // Line anchored at top left now
-                    .with(Style {
-                        position_type: PositionType::Absolute,
-                        position: Rect {
-                            top: Val::Px(pad),
-                            left: Val::Px(pad),
-                            ..Default::default()
-                        },
-                        ..Default::default()
-                    });
-            }
+            _ => {}, // Already drawn.
         }
     }
 }
