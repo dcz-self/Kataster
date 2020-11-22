@@ -86,9 +86,10 @@ fn dumb_output_layer(num_outputs: usize, synapse_count: u8) -> Vec<Neuron> {
         .collect()
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Hash, PartialEq, Eq, Debug)]
 pub struct NodeId(pub usize);
 
+#[derive(Debug, PartialEq)]
 pub enum Signal {
     Synapse {
         value: f32,
@@ -99,7 +100,11 @@ pub enum Signal {
         raw_value: f32,
         activation_value: f32,
         id: NodeId,
-    }
+    },
+    Input {
+        value: f32,
+        id: NodeId,
+    },
 }
 
 /// Brain used by the last stand hero
@@ -126,6 +131,20 @@ impl Brain {
         vec![inputs.mob_rel_angle, inputs.time_survived]
     }
 
+    pub fn get_layers(&self) -> Vec<Vec<NodeId>> {
+        let mut out: Vec<Vec<NodeId>> = vec![
+            (0..(INPUT_COUNT as usize + 1)).map(NodeId).collect(),
+            (0..(self.hidden_layer.len() + 1)).map(NodeId).collect(),
+            (0..(self.output_layer.len())).map(NodeId).collect(),
+        ];
+        let mut prev = 0;
+        for layer in out.iter_mut() {
+            *layer = layer.into_iter().map(|id| NodeId(id.0 + prev)).collect();
+            prev += layer.len()
+        }
+        out
+    }
+
     pub fn get_node_layers(&self) -> Vec<(NodeId, u8)> {
         (0..(INPUT_COUNT + 1)).map(|_| 0)
             .chain((0..(self.hidden_layer.len() + 1)).map(|_| 1))
@@ -137,8 +156,6 @@ impl Brain {
 
     pub fn find_signals(&self, inputs: Inputs) -> Vec<Signal> {
         let mut inputs = Brain::normalize_inputs(inputs);
-        inputs.push(1.0);
-        let offset = inputs.len(); // start ID of the layer
         
         let layer_signals = |layer: &[Neuron], inputs: &[f32], input_id_offset, id_offset| {
             let mut signals = Vec::new();
@@ -146,12 +163,14 @@ impl Brain {
             for (nidx, neuron) in layer.iter().enumerate() {
                 let self_id = NodeId(nidx + id_offset);
                 let values: Vec<_> = neuron.weights.iter().zip(inputs).map(|(w, i)| w * i).collect();
-                for (sidx, value) in values.iter().enumerate() {
-                    signals.push(Signal::Synapse {
-                        value: *value,
-                        from: NodeId(sidx + input_id_offset),
-                        to: self_id,
-                    });
+                for ((sidx, value), weight) in values.iter().enumerate().zip(neuron.weights.iter()) {
+                    if *weight != 0.0 {
+                        signals.push(Signal::Synapse {
+                            value: *value,
+                            from: NodeId(sidx + input_id_offset),
+                            to: self_id,
+                        });
+                    }
                 }
                 let raw_value = values.into_iter().sum();
                 let activation_value = neuron.activation.apply(raw_value);
@@ -164,14 +183,28 @@ impl Brain {
             }
             (signals, outs)
         };
-        
+        let input_signals: Vec<Signal> = inputs.iter().enumerate()
+            .map(|(i, value)| Signal::Input {
+                id: NodeId(i),
+                value: *value,
+            }).collect();
+
+        inputs.push(1.0);
+        let in_offset = 0;
+        let layer_offset = in_offset + inputs.len();
         let (hidden_signals, mut outs)
-            = layer_signals(&self.hidden_layer, &inputs, 0, offset);
+            = layer_signals(&self.hidden_layer, &inputs, in_offset, layer_offset);
+
         outs.push(1.0);
-        let (in_offset, layer_offset) = (offset, offset + outs.len());
+        let in_offset = layer_offset;
+        let layer_offset = in_offset + outs.len();
         let (output_signals, _)
             = layer_signals(&self.output_layer, &outs, in_offset, layer_offset);
-        output_signals
+
+        input_signals.into_iter()
+            .chain(hidden_signals.into_iter())
+            .chain(output_signals.into_iter())
+            .collect()
         /*
         Gen::new(|co| async move {
             
@@ -529,5 +562,20 @@ impl GenePool {
             }
             self.genotypes = new;
         }
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn signals() {
+        let brain = Brain::new_dumb(3);
+        let signals = brain.find_signals(Inputs {
+            mob_rel_angle: 0.0,
+            time_survived: 0.0,
+        });
+        //assert_eq!(signals, vec![]);
     }
 }

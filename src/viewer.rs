@@ -17,14 +17,15 @@ use bevy::ui::entity::NodeComponents;
 use bevy::ui::{ AlignItems, Node, PositionType, Style, Val };
 use bevy_prototype_lyon;
 use bevy_prototype_lyon::prelude::{ point, primitive, FillOptions, PathBuilder, ShapeType, StrokeOptions, TessellationMode };
-use crate::brain::Neuron;
 use crate::components::Borg;
 use crate::shooter;
 use crate::shooter::BrainFed;
+use std::collections::HashMap;
 
 
 use bevy::prelude::BuildChildren;
 use bevy::prelude::IntoQuerySystem;
+use std::iter::FromIterator;
 
 
 pub struct Plugin;
@@ -83,109 +84,103 @@ fn draw_brain(
     let horz_space = 50.0;
     let pad = 20.0;
     
+    let layers = brain.get_layers();
+
+    let node_positions: HashMap<shooter::NodeId, _>
+        = HashMap::from_iter(
+            layers.into_iter().enumerate()
+                .flat_map(|(lidx, nodes)| {
+                    nodes.into_iter().enumerate()
+                        .map(move |(nidx, id)| (id, (nidx, lidx)))
+                })
+        );
+
     let red = materials.add(Color::rgb(0.8, 0.0, 0.0).into());
     let blue = materials.add(Color::rgb(0.0, 0.4, 0.0).into());
-    
-    let mut draw_layer = |layer: &[Neuron], num| {
-        for (outidx, neuron) in layer.iter().enumerate() {
-            for (inidx, connection) in neuron.weights.iter().enumerate() {
-                if connection != &0.0 {
-                    let mut builder = PathBuilder::new();
-                    builder.line_to(point(
-                        horz_space * outidx as f32,
-                        -vert_space * num as f32,
-                    ));
-                    builder.line_to(point(
-                        horz_space * inidx as f32,
-                        -vert_space * (num - 1) as f32,
-                    ));
-                    let path = builder.build();
-                    commands
-                        .spawn(path.stroke(
-                            red.clone(),
-                            &mut meshes,
-                            Vec3::new(0.0, 0.0, 0.0),
-                            &StrokeOptions::default().with_line_width(2.0),
-                        ))
-                        .with(Preview)
-                        .with(Node::default())
-                        // Line anchored at top left now
-                        .with(Style {
-                            position_type: PositionType::Absolute,
-                            position: Rect {
-                                top: Val::Px(pad),
-                                left: Val::Px(pad),
-                                ..Default::default()
-                            },
+
+    for signal in brain.find_signals(inputs.clone()) {
+        match signal {
+            shooter::Signal::Input { id, value } => {
+                let (num, layer) = node_positions.get(&id).unwrap();
+                commands
+                    .spawn(primitive(
+                        materials.add(val_to_color(value).into()).clone(),
+                        &mut meshes,
+                        ShapeType::Circle(10.0),
+                        TessellationMode::Fill(&FillOptions::default()),
+                        Vec3::new(0.0, 0.0, 0.0),
+                    ))
+                    .with(Preview)
+                    .with(Node::default())
+                    // anchored at the center
+                    .with(Style {
+                        position_type: PositionType::Absolute,
+                        position: Rect {
+                            top: Val::Px(pad + *layer as f32 * vert_space),
+                            left: Val::Px(pad + *num as f32 * horz_space),
                             ..Default::default()
-                        });
-                }
+                        },
+                        ..Default::default()
+                    });
+            },
+            shooter::Signal::Neuron { id, raw_value: _, activation_value } => {
+                let (num, layer) = node_positions.get(&id).unwrap();
+                commands
+                    .spawn(primitive(
+                        materials.add(val_to_color(activation_value).into()).clone(),
+                        &mut meshes,
+                        ShapeType::Circle(10.0),
+                        TessellationMode::Fill(&FillOptions::default()),
+                        Vec3::new(0.0, 0.0, 0.0),
+                    ))
+                    .with(Preview)
+                    .with(Node::default())
+                    // anchored at the center
+                    .with(Style {
+                        position_type: PositionType::Absolute,
+                        position: Rect {
+                            top: Val::Px(pad + *layer as f32 * vert_space),
+                            left: Val::Px(pad + *num as f32 * horz_space),
+                            ..Default::default()
+                        },
+                        ..Default::default()
+                    });
+            },
+            shooter::Signal::Synapse { value, from, to } => {
+                let (from_num, from_layer) = node_positions.get(&from).unwrap();
+                let (to_num, to_layer) = node_positions.get(&to).unwrap();
+                let mut builder = PathBuilder::new();
+                builder.line_to(point(
+                    horz_space * *to_num as f32,
+                    -vert_space * *to_layer as f32,
+                ));
+                builder.line_to(point(
+                    horz_space * *from_num as f32,
+                    -vert_space * *from_layer as f32,
+                ));
+                let path = builder.build();
+                commands
+                    .spawn(path.stroke(
+                        materials.add(val_to_color(value).into()).clone(),
+                        &mut meshes,
+                        Vec3::new(0.0, 0.0, 0.0),
+                        &StrokeOptions::default().with_line_width(2.0),
+                    ))
+                    .with(Preview)
+                    .with(Node::default())
+                    // Line anchored at top left now
+                    .with(Style {
+                        position_type: PositionType::Absolute,
+                        position: Rect {
+                            top: Val::Px(pad),
+                            left: Val::Px(pad),
+                            ..Default::default()
+                        },
+                        ..Default::default()
+                    });
             }
-            
-            commands
-                .spawn(primitive(
-                    blue.clone(),
-                    &mut meshes,
-                    ShapeType::Circle(10.0),
-                    TessellationMode::Fill(&FillOptions::default()),
-                    Vec3::new(0.0, 0.0, 0.0),
-                    /*Vec3::new(
-                        outidx as f32 * horz_space,
-                        num as f32 * vert_space,
-                        0.0,
-                    ),*/
-                ))
-                .with(Preview)
-                .with(Node::default())
-                // anchored at the center
-                .with(Style {
-                    position_type: PositionType::Absolute,
-                    position: Rect {
-                        top: Val::Px(pad + num as f32 * vert_space),
-                        left: Val::Px(pad + outidx as f32 * horz_space),
-                        ..Default::default()
-                    },
-                    ..Default::default()
-                });
         }
-    };
-    
-    draw_layer(&brain.output_layer, 2);
-    draw_layer(&brain.hidden_layer, 1);
-    
-
-    let mut draw_inputs = |inputs: &shooter::Inputs| {
-        let inputs = shooter::Brain::normalize_inputs(inputs.clone());
-        for (idx, input) in inputs.into_iter().enumerate() {
-            commands
-                .spawn(primitive(
-                    materials.add(val_to_color(input).into()).clone(),
-                    &mut meshes,
-                    ShapeType::Circle(10.0),
-                    TessellationMode::Fill(&FillOptions::default()),
-                    Vec3::new(0.0, 0.0, 0.0),
-                    /*Vec3::new(
-                        outidx as f32 * horz_space,
-                        num as f32 * vert_space,
-                        0.0,
-                    ),*/
-                ))
-                .with(Preview)
-                .with(Node::default())
-                // anchored at the center
-                .with(Style {
-                    position_type: PositionType::Absolute,
-                    position: Rect {
-                        top: Val::Px(pad),
-                        left: Val::Px(pad + idx as f32 * horz_space),
-                        ..Default::default()
-                    },
-                    ..Default::default()
-                });
-        }
-    };
-
-    draw_inputs(&inputs);
+    }
 }
 
 
