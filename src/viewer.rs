@@ -67,6 +67,7 @@ fn val_to_color(val: f32) -> Color {
             calm - anti
         }
         * norm;
+    // No good reason. Ideally it should be linear in respect to how it is perceived.
     Color::rgb_linear(color[0], color[1], color[2])
 }
 

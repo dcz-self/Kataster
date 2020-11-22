@@ -20,7 +20,7 @@ mod player;
 mod shooter;
 mod state;
 mod tga;
-mod treeb;
+//mod treeb;
 mod ui;
 #[macro_use]
 mod util;

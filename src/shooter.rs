@@ -86,6 +86,22 @@ fn dumb_output_layer(num_outputs: usize, synapse_count: u8) -> Vec<Neuron> {
         .collect()
 }
 
+#[derive(Clone, Copy)]
+pub struct NodeId(pub usize);
+
+pub enum Signal {
+    Synapse {
+        value: f32,
+        from: NodeId,
+        to: NodeId,
+    },
+    Neuron {
+        raw_value: f32,
+        activation_value: f32,
+        id: NodeId,
+    }
+}
+
 /// Brain used by the last stand hero
 /// Uses a single hidden layer of neurons
 #[derive(Debug, Clone, PartialEq)]
@@ -108,6 +124,60 @@ impl Brain {
 
     pub fn normalize_inputs(inputs: Inputs) -> Vec<f32> {
         vec![inputs.mob_rel_angle, inputs.time_survived]
+    }
+
+    pub fn get_node_layers(&self) -> Vec<(NodeId, u8)> {
+        (0..(INPUT_COUNT + 1)).map(|_| 0)
+            .chain((0..(self.hidden_layer.len() + 1)).map(|_| 1))
+            .chain((0..(self.output_layer.len())).map(|_| 2))
+            .enumerate()
+            .map(|(node, layer)| (NodeId(node), layer))
+            .collect()
+    }
+
+    pub fn find_signals(&self, inputs: Inputs) -> Vec<Signal> {
+        let mut inputs = Brain::normalize_inputs(inputs);
+        inputs.push(1.0);
+        let offset = inputs.len(); // start ID of the layer
+        
+        let layer_signals = |layer: &[Neuron], inputs: &[f32], input_id_offset, id_offset| {
+            let mut signals = Vec::new();
+            let mut outs = Vec::new();
+            for (nidx, neuron) in layer.iter().enumerate() {
+                let self_id = NodeId(nidx + id_offset);
+                let values: Vec<_> = neuron.weights.iter().zip(inputs).map(|(w, i)| w * i).collect();
+                for (sidx, value) in values.iter().enumerate() {
+                    signals.push(Signal::Synapse {
+                        value: *value,
+                        from: NodeId(sidx + input_id_offset),
+                        to: self_id,
+                    });
+                }
+                let raw_value = values.into_iter().sum();
+                let activation_value = neuron.activation.apply(raw_value);
+                signals.push(Signal::Neuron {
+                    raw_value,
+                    activation_value,
+                    id: self_id,
+                });
+                outs.push(activation_value);
+            }
+            (signals, outs)
+        };
+        
+        let (hidden_signals, mut outs)
+            = layer_signals(&self.hidden_layer, &inputs, 0, offset);
+        outs.push(1.0);
+        let (in_offset, layer_offset) = (offset, offset + outs.len());
+        let (output_signals, _)
+            = layer_signals(&self.output_layer, &outs, in_offset, layer_offset);
+        output_signals
+        /*
+        Gen::new(|co| async move {
+            
+    co.yield_(self.mut_count).await;
+    co.yield_(20).await;
+})*/
     }
 
     pub fn pretty_print(&self) -> Result<String, fmt::Error> {
