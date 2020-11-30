@@ -34,7 +34,7 @@ pub fn contact_system(
     mut mobs: Query<Mut<Mob>>,
     handles: Query<&RigidBodyHandleComponent>,
 ) {
-    if runstate.gamestate.is(GameState::Game) {
+    if runstate.gamestate.is(GameState::Arena) {
         let mut contacts = vec![];
         while let Ok(contact_event) = events.contact_events.pop() {
             match contact_event {
@@ -128,7 +128,6 @@ pub fn contact_system(
                             Err(QueryError::NoSuchEntity) => {},
                             Err(e) => println!("Borg unuseable genotype {:?}", e),
                         }
-                        runstate.gamestate.transit_to(GameState::GameOver);
                     } else {
                         explosion_spawn_events.send(ExplosionSpawnEvent {
                             kind: ExplosionKind::ShipContact,

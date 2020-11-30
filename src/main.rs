@@ -51,7 +51,7 @@ fn main() {
         .add_event::<shooter::BrainFed>()
         .add_plugin(RapierPhysicsPlugin)
         .add_plugin(fps::Plugin)
-        .add_plugin(viewer::Plugin)
+        //.add_plugin(viewer::Plugin)
         .add_plugins(DefaultPlugins)
         .init_asset_loader::<paq::Loader>()
         .add_resource(RapierConfiguration {
@@ -68,11 +68,12 @@ fn main() {
         .add_stage_after("HANDLE_EXPLOSION", "HANDLE_RUNSTATE")
         .add_stage_after("HANDLE_RUNSTATE", "CLEANUP") // CLEANUP stage required by RapierUtilsPlugin
         .add_plugin(RapierUtilsPlugin)
+        .add_system(arena::check_end.system())
         .add_system(hold_borgs.system())
         .add_system(mob::count_lifetime.system())
         .add_system_to_stage(stage::POST_UPDATE, user_input_system.system())
-        .add_system_to_stage(stage::POST_UPDATE, player::restart_simulation.system())
-        .add_system_to_stage(stage::POST_UPDATE, player::restart_simulation2.system())
+        .add_system_to_stage(stage::POST_UPDATE, arena::end_ai_round.system())
+        .add_system_to_stage(stage::POST_UPDATE, arena::start_ai_round.system())
         .add_system(player::point_at_mouse.system())
         .add_system(player::keyboard_walk.system())
         .add_system_to_stage("FOLLOW", components::swivel_at.system())
@@ -102,7 +103,7 @@ fn main() {
         .add_system_to_stage("HANDLE_CONTACT", spawn_asteroid_system.system())
         .add_system_to_stage("HANDLE_EXPLOSION", spawn_explosion.system())
         .add_system_to_stage("HANDLE_RUNSTATE", runstate_fsm.system())
-        .add_resource(RunState::new(GameState::StartMenu))
+        .add_resource(RunState::new(GameState::MainMenu))
         //.add_plugin(DebugPlugin)
         .run();
 }

@@ -60,9 +60,7 @@ pub fn spawn_explosion(
                 start_scale,
                 end_scale,
             })
-            .with(ForStates {
-                states: vec![GameState::Game, GameState::Pause, GameState::GameOver],
-            });
+            .with(ForStates::from_func(GameState::is_arena));
         let sound = asset_server.load(sound_name);
         audio_output.play(sound);
     }

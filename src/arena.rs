@@ -52,7 +52,7 @@ pub fn setup_arena(
 ) {
     if runstate
         .gamestate
-        .entering_not_from(GameState::Game, GameState::Pause)
+        .entering_group(&vec![GameState::Arena, GameState::ArenaPause])
     {
         runstate.arena = Some(Arena {
             mob_virility: 0.0,
@@ -91,9 +91,7 @@ fn spawn_borg(
         })
         .with(body)
         .with(collider)
-        .with(ForStates {
-            states: vec![GameState::Game, GameState::Pause],
-        })
+        .with(ForStates::from_func(GameState::is_live_arena))
         .with_children(|parent| {
             parent.spawn(SpriteComponents {
                 transform: Transform {
@@ -103,9 +101,7 @@ fn spawn_borg(
                 },
                 material: materials.add(arrow.into()),
                 ..Default::default()
-            }).with(ForStates {
-                states: vec![GameState::Game, GameState::Pause],
-            });
+            }).with(ForStates::from_func(GameState::is_live_arena));
         });
 
     let genotype = runstate.shooter_gene_pool.spawn();
@@ -137,9 +133,7 @@ fn spawn_borg(
             repeat_timer: Timer::from_seconds(0.5, false),
         })
         .with(AttachedToEntity(borg_entity))
-        .with(ForStates {
-            states: vec![GameState::Game, GameState::Pause],
-        });
+        .with(ForStates::from_func(GameState::is_live_arena));
 
     match control {
         ControlledBy::Player => {
@@ -186,9 +180,7 @@ pub fn spawn_asteroid_system(
             .with(Damage { value: 1 })
             .with(body)
             .with(collider)
-            .with(ForStates {
-                states: vec![GameState::Game, GameState::Pause, GameState::GameOver],
-            });
+            .with(ForStates::from_func(GameState::is_arena));
     }
 }
 
@@ -198,7 +190,7 @@ pub fn arena_spawn(
     mut asteroid_spawn_events: ResMut<Events<AsteroidSpawnEvent>>,
     asteroids: Query<&Asteroid>,
 ) {
-    if runstate.gamestate.is(GameState::Game) {
+    if runstate.gamestate.is(GameState::Arena) {
         let mut arena = runstate.arena.as_mut().unwrap();
         arena.mob_virility += time.delta_seconds;
         // Mobs per second. Double every 30sec.
@@ -228,7 +220,7 @@ pub fn hold_borgs(
     mut bodies: ResMut<RigidBodySet>,
     query: Query<(&RigidBodyHandleComponent, &Borg)>,
 ) {
-    if !runstate.gamestate.is(GameState::Game) {
+    if !runstate.gamestate.current().is_live_arena() {
         return;
     }
     for (body_handle, _borg) in query.iter() {
@@ -266,5 +258,34 @@ pub fn hold_borgs(
             body.linvel = Vector::new(xvel, yvel);
             body.set_position(new_position);
         }
+    }
+}
+
+pub fn end_ai_round(
+    mut runstate: ResMut<RunState>,
+) {
+    if runstate.gamestate.is(GameState::ArenaOver) {
+        runstate.gamestate.transit_to(GameState::MainMenu);
+    }
+}
+
+pub fn start_ai_round(
+    mut runstate: ResMut<RunState>,
+) {
+    if runstate.gamestate.is(GameState::MainMenu) {
+        runstate.gamestate.transit_to(GameState::Arena);
+    }
+}
+
+pub fn check_end(
+    mut runstate: ResMut<RunState>,
+    borgs: Query<&Borg>,
+) {
+    if !runstate.gamestate.current().is_live_arena() {
+        return;
+    }
+    if borgs.iter().next().is_none() {
+        // FIXME: alter transition if player is involved
+        runstate.gamestate.transit_to(GameState::ArenaOver);
     }
 }

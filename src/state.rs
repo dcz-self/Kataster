@@ -5,17 +5,64 @@ use super::mob::GenePool;
 use super::shooter;
 
 /// Component to tag an entity as only needed in one game state
-pub struct ForStates {
-    pub states: Vec<GameState>,
+pub enum ForStates<T> {
+    Func(Box<dyn Fn(&T) -> bool + Send + Sync>),
 }
+
+impl<T: PartialEq> ForStates<T> {
+    pub fn from_func<F: Fn(&T) -> bool + Send + Sync + 'static>(pred: F)
+        -> Self
+    {
+        ForStates::Func(Box::new(pred))
+    }
+
+    pub fn covers(&self, state: &T) -> bool {
+        match self {
+            ForStates::Func(pred) => pred(state),
+        }
+    }
+}
+
+
+pub type ValidStates = ForStates<GameState>;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum GameState {
-    StartMenu,
-    Game,
-    GameOver,
-    Pause,
+    /// Launch game state
+    Begin,
+    MainMenu,
+    Manager,
+    Arena,
+    ArenaPause,
+    ArenaOver,
 }
+
+impl Default for GameState {
+    fn default() -> GameState {
+        GameState::Begin
+    }
+}
+
+impl GameState {
+    pub fn is_live_arena(&self) -> bool {
+        use super::GameState as S;
+        match self {
+            S::Arena => true,
+            S::ArenaPause => true,
+            _ => false,
+        }
+    }
+    pub fn is_arena(&self) -> bool {
+        use super::GameState as S;
+        match self {
+            S::Arena => true,
+            S::ArenaPause => true,
+            S::ArenaOver => true,
+            _ => false,
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct RunState {
     pub gamestate: GameStateFsm<GameState>,
@@ -46,12 +93,10 @@ pub fn runstate_fsm(mut runstate: ResMut<RunState>) {
 pub fn state_exit_despawn(
     mut commands: Commands,
     runstate: ResMut<RunState>,
-    query: Query<(Entity, &ForStates)>,
+    query: Query<(Entity, &ForStates<GameState>)>,
 ) {
     for (entity, for_states) in &mut query.iter() {
-        if runstate.gamestate.exiting_one_of(&for_states.states)
-            && !runstate.gamestate.transiting_to_one_of(&for_states.states)
-        {
+        if runstate.gamestate.exiting_group(for_states) {
             commands.despawn(entity);
         }
     }
@@ -65,39 +110,53 @@ enum FsmTransition {
 }
 #[derive(Debug)]
 pub struct GameStateFsm<T: PartialEq + Eq + Copy + fmt::Debug> {
-    current: Option<T>,
+    current: T,
     transition: FsmTransition,
     next: Option<T>,
     prev: Option<T>,
 }
 
-impl<T: PartialEq + Eq + Copy + fmt::Debug> GameStateFsm<T> {
-    pub fn new(start: T) -> GameStateFsm<T> {
+impl<T: PartialEq + Eq + Copy + fmt::Debug + Default> GameStateFsm<T> {
+    pub fn new(initial: T) -> GameStateFsm<T> {
         GameStateFsm {
-            current: None,
+            current: Default::default(),
             transition: FsmTransition::Enter,
-            next: Some(start),
+            next: Some(initial),
             prev: None,
         }
     }
+    pub fn current(&self) -> &T {
+        &self.current
+    }
     pub fn is(&self, state: T) -> bool {
-        self.current == Some(state)
+        self.current == state
     }
-    pub fn exiting_one_of(&self, states: &[T]) -> bool {
-        self.transition == FsmTransition::Exit && states.contains(&self.current.unwrap())
+
+    fn exiting_group(&self, states: &ForStates<T>) -> bool {
+        self.transition == FsmTransition::Exit
+            && states.covers(&self.current)
+            && !self.next.as_ref()
+                    .map(|s| states.covers(s))
+                    .unwrap_or(true)
     }
-    pub fn transiting_to_one_of(&self, states: &[T]) -> bool {
-        self.next
-            .map(|next| states.contains(&next))
-            .unwrap_or(false)
-    }
+
     pub fn entering(&self, state: T) -> bool {
         self.transition == FsmTransition::Enter && self.next == Some(state)
     }
-    pub fn entering_not_from(&self, state: T, from: T) -> bool {
+
+    /// Returns true if entering a state in the group
+    /// from a state not in the group
+    pub fn entering_group(&self, states: &[T]) -> bool {
+        self.entering_group_pred(|state| states.contains(state))
+    }
+    pub fn entering_group_pred<F: Fn(&T)->bool>(&self, pred: F) -> bool {
         self.transition == FsmTransition::Enter
-            && self.next == Some(state)
-            && self.prev != Some(from)
+            && self.next.as_ref()
+                .map(|next| pred(next))
+                .unwrap_or(false)
+            && !self.prev.as_ref()
+                .map(|prev| pred(prev))
+                .unwrap_or(false)
     }
     pub fn transit_to(&mut self, state: T) {
         self.next = Some(state);
@@ -105,17 +164,16 @@ impl<T: PartialEq + Eq + Copy + fmt::Debug> GameStateFsm<T> {
     /// Called every frame to update the phases of transitions.
     /// A transition requires 3 frames: Exit current, enter next, current=next
     pub fn update(&mut self) {
-        if self.next.is_some() {
+        if let Some(next) = self.next {
             match self.transition {
                 FsmTransition::Exit => {
                     // We have exited current state, we can enter the new one
-                    self.prev = self.current;
-                    self.current = None;
+                    self.prev = Some(self.current);
                     self.transition = FsmTransition::Enter;
                 }
                 FsmTransition::Enter => {
                     // We have entered the new one it is now current
-                    self.current = self.next;
+                    self.current = next;
                     self.transition = FsmTransition::None;
                     self.next = None;
                 }
@@ -126,5 +184,35 @@ impl<T: PartialEq + Eq + Copy + fmt::Debug> GameStateFsm<T> {
             }
             //println!("After Update {:?}", self);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    
+    #[derive(Debug, PartialEq, Eq, Clone, Copy)]
+    enum States {
+        AA,
+        B,
+    }
+    
+    impl Default for States {
+        fn default() -> States {
+            States::AA
+        }
+    }
+
+    #[test]
+    pub fn exiting() {
+        let mut fsm = GameStateFsm::new(States::AA);
+        fsm.update();
+        fsm.update();
+        fsm.update();
+        fsm.transit_to(States::B);
+        fsm.update();
+        assert!(fsm.exiting_group(
+            &ForStates::<States>::from_func(|s| s == &States::AA)
+        ));
     }
 }

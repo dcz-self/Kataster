@@ -73,9 +73,7 @@ pub fn spawn(
         })
         .with(body)
         .with(collider)
-        .with(ForStates {
-            states: vec![GameState::Game, GameState::Pause, GameState::GameOver],
-        });
+        .with(ForStates::from_func(GameState::is_arena));
     let sound = asset_server.load("sfx_laser1.mp3");
     audio_output.play(sound);
 }
@@ -86,12 +84,10 @@ pub fn despawn_laser_system(
     time: Res<Time>,
     mut query: Query<(Entity, Mut<Laser>)>,
 ) {
-    if runstate.gamestate.is(GameState::Game) {
-        for (entity, mut laser) in &mut query.iter_mut() {
-            laser.despawn_timer.tick(time.delta_seconds);
-            if laser.despawn_timer.finished {
-                commands.despawn(entity);
-            }
+    for (entity, mut laser) in &mut query.iter_mut() {
+        laser.despawn_timer.tick(time.delta_seconds);
+        if laser.despawn_timer.finished {
+            commands.despawn(entity);
         }
     }
 }

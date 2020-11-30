@@ -1,5 +1,6 @@
 use super::arena::START_LIFE;
 use super::components::*;
+use super::state::ValidStates;
 use super::state::*;
 use bevy::prelude::*;
 
@@ -11,7 +12,7 @@ pub fn start_menu(
     asset_server: Res<AssetServer>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    if runstate.gamestate.entering(GameState::StartMenu) {
+    if runstate.gamestate.entering(GameState::MainMenu) {
         let font_handle = asset_server.load("kenvector_future.ttf");
         commands
             .spawn(NodeComponents {
@@ -29,9 +30,7 @@ pub fn start_menu(
                 },
                 ..Default::default()
             })
-            .with(ForStates {
-                states: vec![GameState::StartMenu],
-            })
+            .with(ValidStates::from_func(|state| state == &GameState::MainMenu))
             .with_children(|parent| {
                 parent
                     .spawn(TextComponents {
@@ -48,9 +47,7 @@ pub fn start_menu(
                         },
                         ..Default::default()
                     })
-                    .with(ForStates {
-                        states: vec![GameState::StartMenu],
-                    })
+                    .with(ValidStates::from_func(|state| state == &GameState::MainMenu))
                     .spawn(TextComponents {
                         style: Style {
                             ..Default::default()
@@ -66,9 +63,7 @@ pub fn start_menu(
                         ..Default::default()
                     })
                     .with(DrawBlinkTimer(Timer::from_seconds(0.5, true)))
-                    .with(ForStates {
-                        states: vec![GameState::StartMenu],
-                    });
+                    .with(ValidStates::from_func(|state| state == &GameState::MainMenu));
             });
     }
 }
@@ -79,7 +74,7 @@ pub fn gameover_menu(
     asset_server: Res<AssetServer>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    if runstate.gamestate.entering(GameState::GameOver) {
+    if runstate.gamestate.entering(GameState::ArenaOver) {
         let font_handle = asset_server.load("kenvector_future.ttf");
         commands
             .spawn(NodeComponents {
@@ -97,9 +92,7 @@ pub fn gameover_menu(
                 },
                 ..Default::default()
             })
-            .with(ForStates {
-                states: vec![GameState::GameOver],
-            })
+            .with(ValidStates::from_func(|state| state == &GameState::ArenaOver))
             .with_children(|parent| {
                 parent
                     .spawn(TextComponents {
@@ -116,9 +109,7 @@ pub fn gameover_menu(
                         },
                         ..Default::default()
                     })
-                    .with(ForStates {
-                        states: vec![GameState::GameOver],
-                    })
+                    .with(ValidStates::from_func(|state| state == &GameState::ArenaOver))
                     .spawn(TextComponents {
                         style: Style {
                             ..Default::default()
@@ -134,9 +125,7 @@ pub fn gameover_menu(
                         ..Default::default()
                     })
                     .with(DrawBlinkTimer(Timer::from_seconds(0.5, true)))
-                    .with(ForStates {
-                        states: vec![GameState::GameOver],
-                    });
+                    .with(ValidStates::from_func(|state| state == &GameState::ArenaOver));
             });
     }
 }
@@ -147,7 +136,7 @@ pub fn pause_menu(
     asset_server: Res<AssetServer>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    if runstate.gamestate.entering(GameState::Pause) {
+    if runstate.gamestate.entering(GameState::ArenaPause) {
         let font_handle = asset_server.load("kenvector_future.ttf");
         commands
             .spawn(NodeComponents {
@@ -165,9 +154,7 @@ pub fn pause_menu(
                 },
                 ..Default::default()
             })
-            .with(ForStates {
-                states: vec![GameState::Pause],
-            })
+            .with(ValidStates::from_func(|state| state == &GameState::ArenaPause))
             .with_children(|parent| {
                 parent
                     .spawn(TextComponents {
@@ -185,9 +172,7 @@ pub fn pause_menu(
                         ..Default::default()
                     })
                     .with(DrawBlinkTimer(Timer::from_seconds(0.5, true)))
-                    .with(ForStates {
-                        states: vec![GameState::Pause],
-                    });
+                    .with(ValidStates::from_func(|state| state == &GameState::ArenaPause));
             });
     }
 }
@@ -207,7 +192,7 @@ pub fn game_ui_spawn(
 ) {
     if runstate
         .gamestate
-        .entering_not_from(GameState::Game, GameState::Pause)
+        .entering_group_pred(GameState::is_live_arena)
     {
         let font_handle = asset_server.load("kenvector_future.ttf");
         commands
@@ -227,9 +212,7 @@ pub fn game_ui_spawn(
                 },
                 ..Default::default()
             })
-            .with(ForStates {
-                states: vec![GameState::Game, GameState::Pause, GameState::GameOver],
-            })
+            .with(ValidStates::from_func(GameState::is_arena))
             .with_children(|parent| {
                 parent
                     .spawn(TextComponents {
@@ -253,9 +236,7 @@ pub fn game_ui_spawn(
                         },
                         ..Default::default()
                     })
-                    .with(ForStates {
-                        states: vec![GameState::Game, GameState::Pause, GameState::GameOver],
-                    })
+                    .with(ValidStates::from_func(GameState::is_arena))
                     .with(UiScore {});
             })
             // Life counters
@@ -276,9 +257,7 @@ pub fn game_ui_spawn(
                 },
                 ..Default::default()
             })
-            .with(ForStates {
-                states: vec![GameState::Game, GameState::Pause],
-            })
+            .with(ValidStates::from_func(GameState::is_live_arena))
             .with_children(|parent| {
                 for i in 1..(START_LIFE + 1) {
                     parent
@@ -303,9 +282,7 @@ pub fn game_ui_spawn(
                             },
                             ..Default::default()
                         })
-                        .with(ForStates {
-                            states: vec![GameState::Game, GameState::Pause],
-                        })
+                        .with(ValidStates::from_func(GameState::is_live_arena))
                         .with(UiLife { min: i });
                 }
             });
@@ -313,21 +290,24 @@ pub fn game_ui_spawn(
 }
 
 pub fn score_ui_system(runstate: ChangedRes<RunState>, mut text: Mut<Text>, _uiscore: &UiScore) {
-    if runstate.gamestate.is(GameState::Game) {
-        text.value = format!("{}", runstate.score.unwrap());
+    if !runstate.gamestate.current().is_arena() {
+        return;
     }
+    text.value = format!("{}", runstate.score.unwrap());
 }
+
 pub fn life_ui_system(
     runstate: Res<RunState>,
     ship_query: Query<&Ship>,
     mut uilife_query: Query<(Mut<Draw>, &UiLife)>,
 ) {
-    if runstate.gamestate.is(GameState::Game) {
-        if let Some(player) = runstate.player {
-            if let Ok(ship) = ship_query.get(player) {
-                for (mut draw, uilife) in &mut uilife_query.iter_mut() {
-                    draw.is_visible = ship.life >= uilife.min;
-                }
+    if !runstate.gamestate.current().is_arena() {
+        return;
+    }
+    if let Some(player) = runstate.player {
+        if let Ok(ship) = ship_query.get(player) {
+            for (mut draw, uilife) in &mut uilife_query.iter_mut() {
+                draw.is_visible = ship.life >= uilife.min;
             }
         }
     }

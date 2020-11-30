@@ -18,7 +18,7 @@ use rand_distr::StandardNormal;
 use std::f32;
 use super::arena;
 use super::components::{ Borg, Mob };
-use super::state::{ GameState, RunState };
+use super::state::RunState;
 
 
 use rand::distributions::Distribution;
@@ -171,7 +171,7 @@ pub fn count_lifetime(
     time: Res<Time>,
     mut query: Query<Mut<Borg>>,
 ) {
-    if !runstate.gamestate.is(GameState::Game) {
+    if !runstate.gamestate.current().is_live_arena() {
         return;
     }
     
