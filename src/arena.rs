@@ -262,9 +262,6 @@ pub fn end_ai_round(
     mut runstate: ResMut<RunState>,
 ) {
     if runstate.gamestate.is(GameState::ArenaOver) {
-        if runstate.gamestate.entering().is_some() {
-            return;
-        }
         runstate.gamestate.transit_to(GameState::BetweenRounds);
     }
 }
@@ -273,9 +270,6 @@ pub fn start_ai_round(
     mut runstate: ResMut<RunState>,
 ) {
     if runstate.gamestate.is(GameState::BetweenRounds) {
-        if runstate.gamestate.entering().is_some() {
-            return;
-        }
         runstate.gamestate.transit_to(GameState::Arena);
     }
 }
@@ -285,9 +279,6 @@ pub fn check_end(
     borgs: Query<&Borg>,
 ) {
     if !runstate.gamestate.current().is_live_arena() {
-        return;
-    }
-    if runstate.gamestate.entering().is_some() {
         return;
     }
     if borgs.iter().next().is_none() {
