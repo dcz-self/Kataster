@@ -114,7 +114,6 @@ pub struct GameStateFsm<T: PartialEq + Eq + Copy + fmt::Debug> {
     current: T,
     transition: FsmTransition,
     next: Option<T>,
-    prev: Option<T>,
 }
 
 impl<T: PartialEq + Eq + Copy + fmt::Debug + Default> GameStateFsm<T> {
@@ -123,7 +122,6 @@ impl<T: PartialEq + Eq + Copy + fmt::Debug + Default> GameStateFsm<T> {
             current: Default::default(),
             transition: FsmTransition::Enter,
             next: Some(initial),
-            prev: None,
         }
     }
     pub fn current(&self) -> &T {
@@ -158,9 +156,7 @@ impl<T: PartialEq + Eq + Copy + fmt::Debug + Default> GameStateFsm<T> {
             && self.next.as_ref()
                 .map(|next| pred(next))
                 .unwrap_or(false)
-            && !self.prev.as_ref()
-                .map(|prev| pred(prev))
-                .unwrap_or(false)
+            && !pred(&self.current)
     }
     pub fn transit_to(&mut self, state: T) {
         if self.transition != FsmTransition::None {
@@ -177,7 +173,6 @@ impl<T: PartialEq + Eq + Copy + fmt::Debug + Default> GameStateFsm<T> {
             match self.transition {
                 FsmTransition::Exit => {
                     // We have exited current state, we can enter the new one
-                    self.prev = Some(self.current);
                     self.transition = FsmTransition::Enter;
                 },
                 FsmTransition::Enter => {
