@@ -15,6 +15,7 @@ use std::fs::File;
 use super::assets;
 use super::components::*;
 use super::player::*;
+use super::state::GameState;
 use super::state::*;
 
 
@@ -48,8 +49,6 @@ pub fn setup_arena(
     commands: Commands,
     mut runstate: ResMut<RunState>,
     assets: Res<assets::Assets>,
-    asset_server: Res<AssetServer>,
-    materials: ResMut<Assets<ColorMaterial>>,
 ) {
     if runstate
         .gamestate
@@ -59,7 +58,7 @@ pub fn setup_arena(
             mob_virility: 0.0,
         });
         runstate.score = Some(0);
-        spawn_borg(commands, runstate, assets, asset_server, materials, ControlledBy::AI);
+        spawn_borg(commands, runstate, assets, ControlledBy::AI);
     }
 }
 
@@ -67,11 +66,8 @@ fn spawn_borg(
     mut commands: Commands,
     mut runstate: ResMut<RunState>,
     assets: Res<assets::Assets>,
-    asset_server: Res<AssetServer>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
     control: ControlledBy,
 ) {
-    let arrow = asset_server.load("arrow.png");
     let body = RigidBodyBuilder::new_dynamic();
     let collider = ColliderBuilder::ball(5.0);
 
@@ -100,7 +96,7 @@ fn spawn_borg(
                     scale: Vec3::splat(1.0/32.0),
                     ..Default::default()
                 },
-                material: materials.add(arrow.into()),
+                material: assets.arrow.clone().unwrap(),
                 ..Default::default()
             }).with(ForStates::from_func(GameState::is_live_arena));
         });
