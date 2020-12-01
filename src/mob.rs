@@ -66,7 +66,7 @@ impl Brain {
 
     /// Alter values based on gene pool variance among the successful ones
     fn mutate(&self) -> Brain {
-        let mut rng = &mut rand::thread_rng();
+        let rng = &mut rand::thread_rng();
         Brain { weights: {
             self.weights.iter()
                 .map(|v| v + rng.sample::<f32, _>(StandardNormal) * 0.05)
