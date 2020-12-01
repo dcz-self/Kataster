@@ -164,6 +164,7 @@ impl<T: PartialEq + Eq + Copy + fmt::Debug + Default> GameStateFsm<T> {
     }
     pub fn transit_to(&mut self, state: T) {
         self.next = Some(state);
+        self.transition = FsmTransition::Exit;
     }
     /// Called every frame to update the phases of transitions.
     /// A transition requires 3 frames: Exit current, enter next, current=next
@@ -174,17 +175,14 @@ impl<T: PartialEq + Eq + Copy + fmt::Debug + Default> GameStateFsm<T> {
                     // We have exited current state, we can enter the new one
                     self.prev = Some(self.current);
                     self.transition = FsmTransition::Enter;
-                }
+                },
                 FsmTransition::Enter => {
                     // We have entered the new one it is now current
                     self.current = next;
                     self.transition = FsmTransition::None;
                     self.next = None;
-                }
-                FsmTransition::None => {
-                    // This is new request to go to the next state, exit the current one first
-                    self.transition = FsmTransition::Exit;
-                }
+                },
+                _ => {},
             }
             //println!("After Update {:?}", self);
         }
@@ -214,7 +212,6 @@ mod tests {
         fsm.update();
         fsm.update();
         fsm.transit_to(States::B);
-        fsm.update();
         assert!(fsm.exiting_group(
             &ForStates::<States>::from_func(|s| s == &States::AA)
         ));
