@@ -69,7 +69,7 @@ fn main() {
         .add_stage_after("HANDLE_EXIT", "HANDLE_RUNSTATE")
         .add_stage_after("HANDLE_RUNSTATE", "CLEANUP") // CLEANUP stage required by RapierUtilsPlugin
         .add_plugin(RapierUtilsPlugin)
-        .add_system(arena::check_end.system())
+        .add_system_to_stage(stage::POST_UPDATE, arena::check_end.system())
         .add_system(hold_borgs.system())
         .add_system(mob::count_lifetime.system())
         .add_system_to_stage(stage::POST_UPDATE, user_input_system.system())

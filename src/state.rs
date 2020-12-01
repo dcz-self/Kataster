@@ -163,6 +163,10 @@ impl<T: PartialEq + Eq + Copy + fmt::Debug + Default> GameStateFsm<T> {
                 .unwrap_or(false)
     }
     pub fn transit_to(&mut self, state: T) {
+        if self.transition != FsmTransition::None {
+            eprintln!("Not going to {:?}, transition already in progress", state);
+            return;
+        }
         self.next = Some(state);
         self.transition = FsmTransition::Exit;
     }
@@ -184,7 +188,6 @@ impl<T: PartialEq + Eq + Copy + fmt::Debug + Default> GameStateFsm<T> {
                 },
                 _ => {},
             }
-            //println!("After Update {:?}", self);
         }
     }
 }
