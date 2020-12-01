@@ -104,24 +104,23 @@ pub fn state_exit_despawn(
 }
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
-enum FsmTransition {
-    Exit,
-    Enter,
+enum Transition<T: PartialEq + Eq + Copy + fmt::Debug> {
+    ExitFor(T),
+    Enter(T),
     None,
 }
+
 #[derive(Debug)]
 pub struct GameStateFsm<T: PartialEq + Eq + Copy + fmt::Debug> {
     current: T,
-    transition: FsmTransition,
-    next: Option<T>,
+    next: Transition<T>,
 }
 
 impl<T: PartialEq + Eq + Copy + fmt::Debug + Default> GameStateFsm<T> {
     pub fn new(initial: T) -> GameStateFsm<T> {
         GameStateFsm {
             current: Default::default(),
-            transition: FsmTransition::Enter,
-            next: Some(initial),
+            next: Transition::ExitFor(initial),
         }
     }
     pub fn current(&self) -> &T {
@@ -132,16 +131,18 @@ impl<T: PartialEq + Eq + Copy + fmt::Debug + Default> GameStateFsm<T> {
     }
 
     fn exiting_group(&self, states: &ForStates<T>) -> bool {
-        self.transition == FsmTransition::Exit
-            && states.covers(&self.current)
-            && !self.next.as_ref()
-                    .map(|s| states.covers(s))
-                    .unwrap_or(true)
+        match &self.next {
+            Transition::ExitFor(next) => {
+                states.covers(&self.current)
+                    && !states.covers(next)
+            },
+            _ => false,
+        }
     }
 
     pub fn entering(&self) -> Option<&T> {
-        match self.transition {
-            FsmTransition::Enter => self.next.as_ref(),
+        match &self.next {
+            Transition::Enter(next) => Some(next),
             _ => None,
         }
      }
@@ -151,38 +152,34 @@ impl<T: PartialEq + Eq + Copy + fmt::Debug + Default> GameStateFsm<T> {
     pub fn entering_group(&self, states: &[T]) -> bool {
         self.entering_group_pred(|state| states.contains(state))
     }
+
     pub fn entering_group_pred<F: Fn(&T)->bool>(&self, pred: F) -> bool {
-        self.transition == FsmTransition::Enter
-            && self.next.as_ref()
-                .map(|next| pred(next))
-                .unwrap_or(false)
-            && !pred(&self.current)
+        match self.next {
+            Transition::Enter(next) => pred(&next) && !pred(&self.current),
+            _ => false,
+        }
     }
     pub fn transit_to(&mut self, state: T) {
-        if self.transition != FsmTransition::None {
+        if self.next != Transition::None {
             eprintln!("Not going to {:?}, transition already in progress", state);
             return;
         }
-        self.next = Some(state);
-        self.transition = FsmTransition::Exit;
+        self.next = Transition::ExitFor(state);
     }
     /// Called every frame to update the phases of transitions.
     /// A transition requires 3 frames: Exit current, enter next, current=next
     pub fn update(&mut self) {
-        if let Some(next) = self.next {
-            match self.transition {
-                FsmTransition::Exit => {
-                    // We have exited current state, we can enter the new one
-                    self.transition = FsmTransition::Enter;
-                },
-                FsmTransition::Enter => {
-                    // We have entered the new one it is now current
-                    self.current = next;
-                    self.transition = FsmTransition::None;
-                    self.next = None;
-                },
-                _ => {},
-            }
+        match self.next.clone() {
+            Transition::ExitFor(next) => {
+                // We have exited current state, we can enter the new one
+                self.next = Transition::Enter(next);
+            },
+            Transition::Enter(next) => {
+                // We have entered the new one it is now current
+                self.current = next;
+                self.next = Transition::None;
+            },
+            _ => {},
         }
     }
 }
