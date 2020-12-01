@@ -141,9 +141,12 @@ impl<T: PartialEq + Eq + Copy + fmt::Debug + Default> GameStateFsm<T> {
                     .unwrap_or(true)
     }
 
-    pub fn entering(&self, state: T) -> bool {
-        self.transition == FsmTransition::Enter && self.next == Some(state)
-    }
+    pub fn entering(&self) -> Option<&T> {
+        match self.transition {
+            FsmTransition::Enter => self.next.as_ref(),
+            _ => None,
+        }
+     }
 
     /// Returns true if entering a state in the group
     /// from a state not in the group
