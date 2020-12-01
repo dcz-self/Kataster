@@ -110,34 +110,41 @@ pub fn user_input_system(
     mut rapier_configuration: ResMut<RapierConfiguration>,
     mut app_exit_events: ResMut<Events<AppExit>>,
 ) {
-    if !runstate.gamestate.is(GameState::MainMenu) {
-        if input.just_pressed(KeyCode::Back) {
-            runstate.gamestate.transit_to(GameState::MainMenu);
-        }
+    if runstate.gamestate.current() != &GameState::MainMenu
+        && input.just_pressed(KeyCode::Back)
+    {
+        runstate.gamestate.transit_to(GameState::MainMenu);
     }
-    if runstate.gamestate.is(GameState::Arena) {
-        if input.just_pressed(KeyCode::Escape) {
-            runstate.gamestate.transit_to(GameState::ArenaPause);
-            rapier_configuration.physics_pipeline_active = false;
-        }
-    } else if runstate.gamestate.is(GameState::MainMenu) {
-        if input.just_pressed(KeyCode::Return) {
-            runstate.gamestate.transit_to(GameState::Arena);
-        }
-        if input.just_pressed(KeyCode::Escape) {
-            app_exit_events.send(AppExit);
-        }
-    } else if runstate.gamestate.is(GameState::ArenaOver) {
-        if input.just_pressed(KeyCode::Return) {
-            runstate.gamestate.transit_to(GameState::MainMenu);
-        }
-        if input.just_pressed(KeyCode::Escape) {
-            app_exit_events.send(AppExit);
-        }
-    } else if runstate.gamestate.is(GameState::ArenaPause) {
-        if input.just_pressed(KeyCode::Escape) {
-            runstate.gamestate.transit_to(GameState::Arena);
-            rapier_configuration.physics_pipeline_active = true;
-        }
+
+    match runstate.gamestate.current() {
+        GameState::Arena => {
+            if input.just_pressed(KeyCode::Escape) {
+                runstate.gamestate.transit_to(GameState::ArenaPause);
+                rapier_configuration.physics_pipeline_active = false;
+            }
+        },
+        GameState::MainMenu => {
+            if input.just_pressed(KeyCode::Return) {
+                runstate.gamestate.transit_to(GameState::Arena);
+            }
+            if input.just_pressed(KeyCode::Escape) {
+                app_exit_events.send(AppExit);
+            }
+        },
+        GameState::ArenaOver => {
+            if input.just_pressed(KeyCode::Return) {
+                runstate.gamestate.transit_to(GameState::MainMenu);
+            }
+            if input.just_pressed(KeyCode::Escape) {
+                app_exit_events.send(AppExit);
+            }
+        },
+        GameState::ArenaPause => {
+            if input.just_pressed(KeyCode::Escape) {
+                runstate.gamestate.transit_to(GameState::Arena);
+                rapier_configuration.physics_pipeline_active = true;
+            }
+        },
+        _ => {},
     }
 }
