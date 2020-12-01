@@ -306,9 +306,9 @@ impl brain::Brain for Brain {
         let activation_options = [Function::Linear, Function::Step01, Function::Gaussian, Function::ReLU, Function::Logistic];
         let mut rng = rand::thread_rng();
 
-        let mut mutate_layer = |mut layer: &mut [Neuron]| {
+        let mut mutate_layer = |layer: &mut [Neuron]| {
             for mut neuron in layer {
-                for mut weight in neuron.weights.iter_mut() {
+                for weight in neuron.weights.iter_mut() {
                     *weight = match *weight {
                         0.0 => match rng.sample(&connect_dist) {
                             true => rng.sample::<f32, _>(StandardNormal) * weight_deviation,
