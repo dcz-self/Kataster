@@ -65,7 +65,8 @@ fn main() {
         // Stage added after add_default_plugins, else something messes up CLEANUP
         .add_stage_after(stage::POST_UPDATE, "HANDLE_CONTACT")
         .add_stage_after("HANDLE_CONTACT", "HANDLE_EXPLOSION")
-        .add_stage_after("HANDLE_EXPLOSION", "HANDLE_RUNSTATE")
+        .add_stage_after("HANDLE_EXPLOSION", "HANDLE_EXIT")
+        .add_stage_after("HANDLE_EXIT", "HANDLE_RUNSTATE")
         .add_stage_after("HANDLE_RUNSTATE", "CLEANUP") // CLEANUP stage required by RapierUtilsPlugin
         .add_plugin(RapierUtilsPlugin)
         .add_system(arena::check_end.system())
@@ -96,13 +97,13 @@ fn main() {
         .add_system(gameover_menu.system())
         .add_system(pause_menu.system())
         .add_system(draw_blink_system.system())
-        .add_system(state_exit_despawn.system())
         .add_startup_system(assets::setup.system())
         .add_startup_system(setup.system())
         .add_system_to_stage(stage::POST_UPDATE, contact::contact_system.system())
         .add_system_to_stage("HANDLE_CONTACT", spawn_asteroid_system.system())
         .add_system_to_stage("HANDLE_EXPLOSION", spawn_explosion.system())
         .add_system_to_stage("HANDLE_RUNSTATE", runstate_fsm.system())
+        .add_system_to_stage("HANDLE_EXIT", state_exit_despawn.system())
         .add_resource(RunState::new(GameState::MainMenu))
         //.add_plugin(DebugPlugin)
         .run();
