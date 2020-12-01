@@ -35,6 +35,7 @@ pub enum GameState {
     Arena,
     ArenaPause,
     ArenaOver,
+    BetweenRounds,
 }
 
 impl Default for GameState {

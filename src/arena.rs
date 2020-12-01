@@ -265,14 +265,14 @@ pub fn end_ai_round(
     mut runstate: ResMut<RunState>,
 ) {
     if runstate.gamestate.is(GameState::ArenaOver) {
-        runstate.gamestate.transit_to(GameState::MainMenu);
+        runstate.gamestate.transit_to(GameState::BetweenRounds);
     }
 }
 
 pub fn start_ai_round(
     mut runstate: ResMut<RunState>,
 ) {
-    if runstate.gamestate.is(GameState::MainMenu) {
+    if runstate.gamestate.is(GameState::BetweenRounds) {
         runstate.gamestate.transit_to(GameState::Arena);
     }
 }
