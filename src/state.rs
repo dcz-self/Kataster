@@ -1,28 +1,36 @@
 use bevy::prelude::*;
 use core::fmt;
+use crate::util::PredicateContainer;
 use super::arena::*;
 use super::mob::GenePool;
 use super::shooter;
 
+
 /// Component to tag an entity as only needed in one game state
-pub enum ForStates<T> {
-    Func(Box<dyn Fn(&T) -> bool + Send + Sync>),
+#[derive(Clone)]
+pub enum ForStates<T: 'static> {
+    Func(PredicateContainer<T>),
 }
 
 impl<T: PartialEq> ForStates<T> {
-    pub fn from_func<F: Fn(&T) -> bool + Send + Sync + 'static>(pred: F)
+    pub fn from_func<F: Fn(&T) -> bool + Send + Sync + Clone + 'static>(pred: F)
         -> Self
     {
-        ForStates::Func(Box::new(pred))
+        ForStates::Func(PredicateContainer::new(pred))// { function: Box::new(pred) } )
     }
 
     pub fn covers(&self, state: &T) -> bool {
         match self {
-            ForStates::Func(pred) => pred(state),
+            ForStates::Func(pred) => pred.apply(state),
         }
     }
 }
 
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub enum Mode {
+    AI,
+    Player,
+}
 
 pub type ValidStates = ForStates<GameState>;
 
@@ -32,9 +40,11 @@ pub enum GameState {
     Begin,
     MainMenu,
     Manager,
-    Arena,
-    ArenaPause,
-    ArenaOver,
+    Arena(Mode),
+    ArenaPause(Mode),
+    /// Round summary. Physics goes on, but the action is finished.
+    ArenaOver(Mode),
+    /// Helper to clean up the arena
     BetweenRounds,
 }
 
@@ -45,21 +55,25 @@ impl Default for GameState {
 }
 
 impl GameState {
+    /// Play is not over yet.
     pub fn is_live_arena(&self) -> bool {
         use super::GameState as S;
         match self {
-            S::Arena => true,
-            S::ArenaPause => true,
+            S::Arena(_) => true,
+            S::ArenaPause(_) => true,
             _ => false,
         }
     }
     pub fn is_arena(&self) -> bool {
+        self.arena_mode().is_some()
+    }
+    pub fn arena_mode(&self) -> Option<Mode> {
         use super::GameState as S;
-        match self {
-            S::Arena => true,
-            S::ArenaPause => true,
-            S::ArenaOver => true,
-            _ => false,
+        match self.clone() {
+            S::Arena(mode) => Some(mode),
+            S::ArenaPause(mode) => Some(mode),
+            S::ArenaOver(mode) => Some(mode),
+            _ => None,
         }
     }
 }

@@ -10,7 +10,7 @@ use bevy_rapier2d::na::{ Point2, Translation2, Vector2 };
 use super::arena;
 use super::assets;
 use super::components::{weapon_trigger, Borg, LooksAt, Weapon};
-use super::state::*;
+use super::state::{ GameState, Mode, RunState };
 
 
 /// Marks entities walking with the keyboard.
@@ -116,22 +116,22 @@ pub fn user_input_system(
         runstate.gamestate.transit_to(GameState::MainMenu);
     }
 
-    match runstate.gamestate.current() {
-        GameState::Arena => {
+    match runstate.gamestate.current().clone() {
+        GameState::Arena(mode) => {
             if input.just_pressed(KeyCode::Escape) {
-                runstate.gamestate.transit_to(GameState::ArenaPause);
+                runstate.gamestate.transit_to(GameState::ArenaPause(mode));
                 rapier_configuration.physics_pipeline_active = false;
             }
         },
         GameState::MainMenu => {
             if input.just_pressed(KeyCode::Return) {
-                runstate.gamestate.transit_to(GameState::Arena);
+                runstate.gamestate.transit_to(GameState::Arena(Mode::AI));
             }
             if input.just_pressed(KeyCode::Escape) {
                 app_exit_events.send(AppExit);
             }
         },
-        GameState::ArenaOver => {
+        GameState::ArenaOver(_) => {
             if input.just_pressed(KeyCode::Return) {
                 runstate.gamestate.transit_to(GameState::MainMenu);
             }
@@ -139,9 +139,9 @@ pub fn user_input_system(
                 app_exit_events.send(AppExit);
             }
         },
-        GameState::ArenaPause => {
+        GameState::ArenaPause(mode) => {
             if input.just_pressed(KeyCode::Escape) {
-                runstate.gamestate.transit_to(GameState::Arena);
+                runstate.gamestate.transit_to(GameState::Arena(mode));
                 rapier_configuration.physics_pipeline_active = true;
             }
         },

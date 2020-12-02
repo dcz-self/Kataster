@@ -1,7 +1,6 @@
 use super::arena::START_LIFE;
 use super::components::*;
-use super::state::ValidStates;
-use super::state::*;
+use super::state::{ GameState, Mode, RunState, ValidStates };
 use bevy::prelude::*;
 
 pub struct DrawBlinkTimer(pub Timer);
@@ -74,7 +73,7 @@ pub fn gameover_menu(
     asset_server: Res<AssetServer>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    if let Some(GameState::ArenaOver) = runstate.gamestate.entering() {
+    if let Some(GameState::ArenaOver(Mode::Player)) = runstate.gamestate.entering() {
         let font_handle = asset_server.load("kenvector_future.ttf");
         commands
             .spawn(NodeComponents {
@@ -92,7 +91,7 @@ pub fn gameover_menu(
                 },
                 ..Default::default()
             })
-            .with(ValidStates::from_func(|state| state == &GameState::ArenaOver))
+            .with(ValidStates::from_func(|state| state == &GameState::ArenaOver(Mode::Player)))
             .with_children(|parent| {
                 parent
                     .spawn(TextComponents {
@@ -109,7 +108,7 @@ pub fn gameover_menu(
                         },
                         ..Default::default()
                     })
-                    .with(ValidStates::from_func(|state| state == &GameState::ArenaOver))
+                    .with(ValidStates::from_func(|state| state == &GameState::ArenaOver(Mode::Player)))
                     .spawn(TextComponents {
                         style: Style {
                             ..Default::default()
@@ -125,7 +124,7 @@ pub fn gameover_menu(
                         ..Default::default()
                     })
                     .with(DrawBlinkTimer(Timer::from_seconds(0.5, true)))
-                    .with(ValidStates::from_func(|state| state == &GameState::ArenaOver));
+                    .with(ValidStates::from_func(|state| state == &GameState::ArenaOver(Mode::Player)));
             });
     }
 }
@@ -136,7 +135,11 @@ pub fn pause_menu(
     asset_server: Res<AssetServer>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    if let Some(GameState::ArenaPause) = runstate.gamestate.entering() {
+    if let Some(GameState::ArenaPause(mode)) = runstate.gamestate.entering() {
+        let mode = mode.clone();
+        let states = ValidStates::from_func(move |state|
+            state == &GameState::ArenaPause(mode)
+        );
         let font_handle = asset_server.load("kenvector_future.ttf");
         commands
             .spawn(NodeComponents {
@@ -154,7 +157,7 @@ pub fn pause_menu(
                 },
                 ..Default::default()
             })
-            .with(ValidStates::from_func(|state| state == &GameState::ArenaPause))
+            .with(states.clone())
             .with_children(|parent| {
                 parent
                     .spawn(TextComponents {
@@ -172,7 +175,7 @@ pub fn pause_menu(
                         ..Default::default()
                     })
                     .with(DrawBlinkTimer(Timer::from_seconds(0.5, true)))
-                    .with(ValidStates::from_func(|state| state == &GameState::ArenaPause));
+                    .with(states.clone());
             });
     }
 }
