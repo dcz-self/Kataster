@@ -52,7 +52,22 @@ pub fn start_menu(
                             ..Default::default()
                         },
                         text: Text {
-                            value: "enter".to_string(),
+                            value: "1: Start shooting".to_string(),
+                            font: font_handle.clone(),
+                            style: TextStyle {
+                                font_size: 50.0,
+                                color: Color::rgb_u8(0x00, 0x44, 0x44),
+                            },
+                        },
+                        ..Default::default()
+                    })
+                    .with(ValidStates::from_func(|state| state == &GameState::MainMenu))
+                    .spawn(TextComponents {
+                        style: Style {
+                            ..Default::default()
+                        },
+                        text: Text {
+                            value: "2: AI mode".to_string(),
                             font: font_handle,
                             style: TextStyle {
                                 font_size: 50.0,
@@ -61,7 +76,6 @@ pub fn start_menu(
                         },
                         ..Default::default()
                     })
-                    .with(DrawBlinkTimer(Timer::from_seconds(0.5, true)))
                     .with(ValidStates::from_func(|state| state == &GameState::MainMenu));
             });
     }

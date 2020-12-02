@@ -54,7 +54,12 @@ pub fn setup_arena(
             mob_virility: 0.0,
         });
         runstate.score = Some(0);
-        spawn_borg(commands, runstate, assets, ControlledBy::AI);
+        let mode = runstate.gamestate.entering().unwrap().arena_mode().unwrap();
+        let control = match mode {
+            Mode::AI => ControlledBy::AI,
+            Mode::Player => ControlledBy::Player,
+        };
+        spawn_borg(commands, runstate, assets, control);
     }
 }
 
@@ -257,7 +262,7 @@ pub fn hold_borgs(
 pub fn end_ai_round(
     mut runstate: ResMut<RunState>,
 ) {
-    if runstate.gamestate.is(GameState::ArenaOver(Mode::AI)) {
+    if let GameState::ArenaOver(Mode::AI) = runstate.gamestate.current() {
         runstate.gamestate.transit_to(GameState::BetweenRounds);
     }
 }
@@ -278,9 +283,8 @@ pub fn check_end(
     if !state.is_live_arena() {
         return;
     }
-    let mode = state.arena_mode().unwrap();
     if borgs.iter().next().is_none() {
-        // FIXME: alter transition if player is involved
+        let mode = state.arena_mode().unwrap();
         runstate.gamestate.transit_to(GameState::ArenaOver(mode));
     }
 }
