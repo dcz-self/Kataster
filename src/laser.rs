@@ -1,7 +1,6 @@
 use super::components::*;
 use super::state::*;
 use bevy::prelude::*;
-use bevy::math::{ Quat, Vec3 };
 use bevy_rapier2d::{
     na::Vector2,
     rapier::{
@@ -10,25 +9,10 @@ use bevy_rapier2d::{
         //        math::Point,
     },
 };
-use bevy_rapier2d::rapier::math::{ Isometry, Translation, Vector };
-use bevy_rapier2d::na::UnitComplex;
 
+use crate::geometry::into_isometry_2d;
 use super::assets;
 
-
-/// 2d version
-fn into_isometry(translation: Vec3, rotation: Quat) -> Isometry<f32> {
-    let (axis, angle) = rotation.to_axis_angle();
-    let angle = match axis.z() > 0.0 {
-        true => angle,
-        false => -angle,
-    };
-        
-    Isometry::from_parts(
-        Translation::from(Vector::new(translation.x(), translation.y())),
-        UnitComplex::new(angle),
-    )
-}
 
 pub fn spawn(
     mut commands: &mut Commands,
@@ -37,7 +21,7 @@ pub fn spawn(
     audio_output: &Res<Audio>,
     transform: &Transform,
 ) {
-    let isometry = into_isometry(
+    let isometry = into_isometry_2d(
         transform.translation.clone(),
         transform.rotation.clone()
     );
