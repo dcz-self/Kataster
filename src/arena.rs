@@ -50,10 +50,7 @@ pub fn setup_arena(
     mut runstate: ResMut<RunState>,
     assets: Res<assets::Assets>,
 ) {
-    if runstate
-        .gamestate
-        .entering_group(&vec![GameState::Arena, GameState::ArenaPause])
-    {
+    if runstate.gamestate.entering_group_pred(GameState::is_live_arena) {
         runstate.arena = Some(Arena {
             mob_virility: 0.0,
         });

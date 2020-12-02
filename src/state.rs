@@ -149,10 +149,6 @@ impl<T: PartialEq + Eq + Copy + fmt::Debug + Default> GameStateFsm<T> {
 
     /// Returns true if entering a state in the group
     /// from a state not in the group
-    pub fn entering_group(&self, states: &[T]) -> bool {
-        self.entering_group_pred(|state| states.contains(state))
-    }
-
     pub fn entering_group_pred<F: Fn(&T)->bool>(&self, pred: F) -> bool {
         match self.next {
             Transition::Enter(next) => pred(&next) && !pred(&self.current),
@@ -167,7 +163,7 @@ impl<T: PartialEq + Eq + Copy + fmt::Debug + Default> GameStateFsm<T> {
         self.next = Transition::ExitFor(state);
     }
     /// Called every frame to update the phases of transitions.
-    /// A transition requires 3 frames: Exit current, enter next, current=next
+    /// A transition requires 2 frames: Exit current, enter next
     pub fn update(&mut self) {
         match self.next.clone() {
             Transition::ExitFor(next) => {
