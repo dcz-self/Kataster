@@ -34,7 +34,7 @@ After about 100 attempts, the gene pool will get honed, and you should be seeing
 
 Brains of all creatures are neural networks, and the connections between neurons, and neurons' activation funcions are what evolves.
 
-### Open brain
+### Open brain (disabled for memory leaks :()
 
 The bottom left corner is the live view of the brain of the shooter.
 
@@ -52,11 +52,7 @@ So don't be surprised that a neuron with no connections is suddenly always activ
 
 ## FAQ
 
-### I want to be the shooter!
-
-The mode is currently commented out :P
-
-### It's slow/leaks memory!
+### It's slow!
 
 Yes. Let me know you care and I may fix it.
 
