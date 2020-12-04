@@ -10,7 +10,7 @@ Inspired by the unmatched freeware version of [Crimsonland](http://phoenix.ee/ol
 
 ![Fleas](https://porcupinefactory.org/data/breedmatic0.2_flood.png)
 
-If you like it, let me know! I'm dcz on freenode IRC, and my email is breedm.dcz@porcupinefactory.org .
+If you like it, let me know! I'm dcz on freenode IRC, and my email is bmatic (dot) dcz (at) porcupinefactory.org .
 
 ## Breeding
 
