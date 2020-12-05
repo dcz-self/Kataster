@@ -33,34 +33,76 @@ fn double_helix<R: rand::Rng>(rng: &mut R) -> impl Iterator<Item=OutputMesh> {
         fn to_rule(&self) -> Rule {
             // let mut rng = *self.0.borrow_mut();
             let mut rng = rand::thread_rng();
+            
+            let at = rule![
+                    tf![Tf::hue(50.0)] => rule![
+                        tf![Tf::tx(1.5)] => rule![
+                            tf![Tf::rx(80.0), Tf::ry(40.0), Tf::rz(0.0)] => cube(),
+                        ],
+                        tf![Tf::tx(0.5)] => rule![
+                            tf![Tf::rx(70.0), Tf::ry(30.0), Tf::rz(10.0)] => cube(),
+                        ],
+                    ],
+                    tf![Tf::hue(90.0)] => rule![
+                        tf![Tf::tx(-1.5)] => rule![
+                            tf![Tf::rx(70.0), Tf::ry(30.0), Tf::rz(-10.0)] => cube(),
+                        ],
+                        tf![Tf::tx(-0.5)] => rule![
+                            tf![Tf::rx(60.0), Tf::ry(20.0), Tf::rz(0.0)] => cube(),
+                        ],
+                    ],
+            ];
+            let gc = rule![
+                    tf![Tf::hue(150.0)] => rule![
+                        tf![Tf::tx(1.5)] => rule![
+                            tf![Tf::rx(40.0), Tf::ry(10.0), Tf::rz(80.0)] => cube(),
+                        ],
+                        tf![Tf::tx(0.5)] => rule![
+                            tf![Tf::rx(30.0), Tf::ry(0.0), Tf::rz(90.0)] => cube(),
+                        ],
+                    ],
+                    tf![Tf::hue(250.0)] => rule![
+                        tf![Tf::tx(-0.5)] => rule![
+                            tf![Tf::rx(50.0), Tf::ry(0.0), Tf::rz(0.0)] => cube(),
+                        ],
+                        tf![Tf::tx(-1.5)] => rule![
+                            tf![Tf::rx(60.0), Tf::ry(10.0), Tf::rz(10.0)] => cube(),
+                        ],
+                    ],
+            ];
+
             [
-                rule![
-                    tf![Tf::tx(1.0), Tf::hue(50.0)] => cube(), // A
-                    tf![Tf::tx(-1.0), Tf::hue(90.0)] => cube(), // T
-                ],
-                rule![
-                    tf![Tf::tx(1.0), Tf::hue(150.0)] => cube(), // G
-                    tf![Tf::tx(-1.0), Tf::hue(250.0)] => cube(), // C
-                ],
+                at.clone(),
+                gc.clone(),
                 // reverse
                 rule![
-                    tf![Tf::tx(1.0), Tf::hue(90.0)] => cube(),
-                    tf![Tf::tx(-1.0), Tf::hue(50.0)] => cube(),
+                    tf![Tf::ry(180.0)] => at,
                 ],
                 rule![
-                    tf![Tf::tx(1.0), Tf::hue(250.0)] => cube(),
-                    tf![Tf::tx(-1.0), Tf::hue(150.0)] => cube(),
-                ]
+                    tf![Tf::ry(180.0)] => gc,
+                ],
             ].choose(&mut rng)
             .unwrap()
             .to_owned()
         }
     }
     
-    let rule = Rule::new()
-        .push(vec![Tf::saturation(0.3), Tf::hue(160.0), Tf::tx(3.0)], cube())
-        .push(vec![Tf::saturation(0.3), Tf::tx(-3.0)], cube())
-        .push(Tf::tx(0.0), BasePair);//BasePair(RefCell::new(rng)));
+    let stem = rule![
+        tf![Tf::ry(18.0), Tf::ty(1.0)] => rule![
+            tf![Tf::tx(3.0)] => rule![
+                tf![Tf::rx(20.0), Tf::ry(50.0), Tf::rz(30.0)] => cube(),
+            ],
+        ],
+        tf![Tf::tx(3.0)] => rule![
+            tf![Tf::rx(10.0), Tf::ry(40.0), Tf::rz(20.0)] => cube(),
+        ],
+    ];
+    
+    let rule = rule![
+        tf![Tf::saturation(0.3), Tf::hue(160.0)] => stem.clone(),
+        tf![Tf::saturation(0.3), Tf::ry(-180.0)] => stem,
+        tf![Tf::tx(0.0)] => BasePair, //BasePair(RefCell::new(rng)));
+    ];
     let rule = Rule::new()
         .push(
             Replicate::n(
