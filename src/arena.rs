@@ -223,10 +223,10 @@ pub fn hold_borgs(
     }
     for (body_handle, _borg) in query.iter() {
         let mut body = bodies.get_mut(body_handle.handle()).unwrap();
-        let mut x = body.position.translation.vector.x;
-        let mut y = body.position.translation.vector.y;
-        let mut xvel = body.linvel.x;
-        let mut yvel = body.linvel.y;
+        let mut x = body.position().translation.vector.x;
+        let mut y = body.position().translation.vector.y;
+        let mut xvel = body.linvel().x;
+        let mut yvel = body.linvel().y;
         let mut updated = false;
         // Stop at screen edges
         let half_width = ARENA_WIDTH / 2.0;
@@ -250,11 +250,11 @@ pub fn hold_borgs(
             yvel = 0.0;
         }
         if updated {
-            let mut new_position = body.position.clone();
+            let mut new_position = body.position().clone();
             new_position.translation.vector.x = x;
             new_position.translation.vector.y = y;
-            body.linvel = Vector::new(xvel, yvel);
-            body.set_position(new_position);
+            body.set_linvel(Vector::new(xvel, yvel), false);
+            body.set_position(new_position, false);
         }
     }
 }

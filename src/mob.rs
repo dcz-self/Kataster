@@ -132,13 +132,13 @@ pub fn think(
         .next() // Only take first borg. Should be expanded for multiplayer.
         .map(|(body, borg)| {
             let body = bodies.get(body.handle()).unwrap();
-            Point2::from(body.position.translation.vector)
+            Point2::from(body.position().translation.vector)
         })
         .unwrap_or(Point2::new(0.0, 0.0));
         
     for (body, mob) in mobs.iter() {
         let mut body = bodies.get_mut(body.handle()).unwrap();
-        let point: Point2<f32> = body.position.inverse_transform_point(&borg_position);
+        let point: Point2<f32> = body.position().inverse_transform_point(&borg_position);
         let inputs = Inputs {
             angle_to_player: {
                 Rotation2::rotation_between(
@@ -148,7 +148,7 @@ pub fn think(
             },
             distance_to_borg: {
                 (
-                    Point2::from(body.position.translation.vector)
+                    Point2::from(body.position().translation.vector)
                         - borg_position
                 ).norm()
             },
@@ -159,9 +159,8 @@ pub fn think(
             .min(mob.rotation_speed)
             .max(-mob.rotation_speed);
         //println!("{}", turn_speed);
-        body.wake_up(true);
-        body.angvel = turn_speed;
-        body.linvel = body.position.rotation.transform_vector(&Vector2::new(0.0, mob.speed));
+        body.set_angvel(turn_speed, true);
+        body.set_linvel(body.position().rotation.transform_vector(&Vector2::new(0.0, mob.speed)), true);
     }
 }
 

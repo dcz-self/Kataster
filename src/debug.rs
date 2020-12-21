@@ -52,7 +52,7 @@ pub fn debug_positions(
         if let Ok((body_handle, parent_transform, parent_gtransform)) = entities.get(target_entity.0) {
             let body = bodies.get(body_handle.handle()).unwrap();
             println!("{}", title);
-            println!("pb {:?}", body.position.translation.vector);
+            println!("pb {:?}", body.position().translation.vector);
             println!("pt {:?}", parent_transform.translation);
             println!("pg {:?}", parent_gtransform.translation);
             println!("ct {:?}", transform.translation);

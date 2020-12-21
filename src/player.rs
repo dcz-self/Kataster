@@ -87,20 +87,21 @@ pub fn keyboard_walk(
     for (body_handle, borg, _walk) in query.iter() {
         let mut body = bodies.get_mut(body_handle.handle()).unwrap();
         let rotation = rotation as f32 * borg.rotation_speed;
-        if rotation != body.angvel {
-            body.wake_up(true);
-            body.angvel = rotation;
+        if rotation != body.angvel() {
+            body.set_angvel(rotation, true);
         }
         // if neither rotation nor speed changed, can ignore
-        body.wake_up(true);
-        body.linvel = if speed != 0 {
-            let velocity = body.position.rotation.transform_vector(&Vector2::y())
-                * speed as f32
-                * borg.speed;
-            velocity
-        } else {
-            Vector2::zeros()
-        }
+        body.set_linvel(
+            if speed != 0 {
+                let velocity = body.position().rotation.transform_vector(&Vector2::y())
+                    * speed as f32
+                    * borg.speed;
+                velocity
+            } else {
+                Vector2::zeros()
+            },
+            true,
+        );
     }
 }
 

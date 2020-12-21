@@ -94,8 +94,8 @@ pub fn contact_system(
 
                     explosion_spawn_events.send(ExplosionSpawnEvent {
                         kind: ExplosionKind::LaserOnAsteroid,
-                        x: laser_body.position.translation.x,
-                        y: laser_body.position.translation.y,
+                        x: laser_body.position().translation.x,
+                        y: laser_body.position().translation.y,
                     });
                 }
                 commands.despawn(e1);
@@ -116,8 +116,8 @@ pub fn contact_system(
                 if borg.life <= 0 {
                     explosion_spawn_events.send(ExplosionSpawnEvent {
                         kind: ExplosionKind::ShipDead,
-                        x: player_body.position.translation.x,
-                        y: player_body.position.translation.y,
+                        x: player_body.position().translation.x,
+                        y: player_body.position().translation.y,
                     });
                     commands.despawn_recursive(e1);
                     // FIXME: despawn LookAts
@@ -134,8 +134,8 @@ pub fn contact_system(
                 } else {
                     explosion_spawn_events.send(ExplosionSpawnEvent {
                         kind: ExplosionKind::ShipContact,
-                        x: player_body.position.translation.x,
-                        y: player_body.position.translation.y,
+                        x: player_body.position().translation.x,
+                        y: player_body.position().translation.y,
                     });
                 }
                 let mob = mobs.get_mut(e2).unwrap();

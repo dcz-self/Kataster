@@ -414,14 +414,14 @@ pub fn think(
     let mob_positions: Vec<_>
         = mobs.iter()
         .filter_map(|(body, _)| bodies.get(body.handle()))
-        .map(|body| body.position.translation.vector.clone().into())
+        .map(|body| body.position().translation.vector.clone().into())
         .collect();
 
     for (entity, body, borg, mut brain) in borgs.iter_mut() {
         let mut body = bodies.get_mut(body.handle()).unwrap();
-        let nearest = get_nearest(&body.position.translation.vector.into(), &mob_positions)
+        let nearest = get_nearest(&body.position().translation.vector.into(), &mob_positions)
             .unwrap_or(Point2::new(0.0, 0.0));
-        let rot = angle_from(&body.position, &nearest);
+        let rot = angle_from(body.position(), &nearest);
         let inputs = Inputs {
             mob_rel_angle: rot / f32::consts::PI,
             time_survived: borg.time_alive,
@@ -429,15 +429,20 @@ pub fn think(
         brain_fed_events.send(BrainFed { entity, inputs: inputs.clone() });
         let outputs = brain.process(inputs);
         // Apply outputs. Might be better to do this in a separate step.
-        body.wake_up(true);
-        body.angvel = (outputs.turn * borg.rotation_speed).min(borg.rotation_speed).max(-borg.rotation_speed);
-        body.linvel = body.position.rotation.transform_vector(&Vector2::new(
-            0.0,
-            borg.speed * outputs.walk.max(-1.0).min(1.0)
-        ));
+        body.set_angvel(
+            (outputs.turn * borg.rotation_speed).min(borg.rotation_speed).max(-borg.rotation_speed),
+            true,
+        );
+        body.set_linvel(
+            body.position().rotation.transform_vector(&Vector2::new(
+                0.0,
+                borg.speed * outputs.walk.max(-1.0).min(1.0)
+            )),
+            true,
+        );
         let weapons = weapons.iter_mut().filter(|(_w, _t, parent)| parent.0 == entity);
         for (mut weapon, mut transform, _parent) in weapons {
-            let abs_angle = body.position.rotation.angle() + outputs.aim_rel_angle.max(-1.0).min(1.0) * f32::consts::PI;
+            let abs_angle = body.position().rotation.angle() + outputs.aim_rel_angle.max(-1.0).min(1.0) * f32::consts::PI;
             transform.rotation = Quat::from_axis_angle(Vec3::new(0.0, 0.0, 1.0), abs_angle);
             if outputs.shoot {
                 weapon_trigger(&mut weapon, &transform, &mut commands, &asset_server, &assets, &audio_output);
