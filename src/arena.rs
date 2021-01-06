@@ -20,6 +20,7 @@ use super::state::{ GameState, Mode, RunState, ValidStates };
 
 
 use rand_distr::Distribution;
+use crate::rapier::WithBody;
 
 
 /// Pixel perfect.
@@ -88,7 +89,7 @@ fn spawn_borg(
             time_alive: 0.0,
             score: 0,
         })
-        .with(body)
+        .with_body(body)
         .with(collider)
         .with(ValidStates::from_func(GameState::is_live_arena))
         .with_children(|parent| {
@@ -177,7 +178,7 @@ pub fn spawn_asteroid_system(
                 speed: 30.0,
             })
             .with(Damage { value: 1 })
-            .with(body)
+            .with_body(body)
             .with(collider)
             .with(ValidStates::from_func(GameState::is_arena));
     }

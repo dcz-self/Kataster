@@ -15,6 +15,9 @@ use crate::geometry::into_isometry_2d;
 use super::assets;
 
 
+use crate::rapier::WithBody;
+
+
 pub fn spawn(
     commands: &mut Commands,
     asset_server: &Res<AssetServer>,
@@ -56,7 +59,7 @@ pub fn spawn(
         .with(Laser {
             despawn_timer: Timer::from_seconds(5.0, false),
         })
-        .with(body)
+        .with_body(body)
         .with(collider)
         .with(ForStates::from_func(GameState::is_arena));
     let sound = asset_server.load("sfx_laser1.mp3");

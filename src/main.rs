@@ -19,6 +19,7 @@ mod laser;
 mod mob;
 //mod paq;
 mod player;
+mod rapier;
 mod shooter;
 mod state;
 //mod tga;
