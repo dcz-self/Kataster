@@ -89,7 +89,7 @@ pub struct Weapon {
 
 pub fn weapon_repeat(time: Res<Time>, mut weapons: Query<Mut<Weapon>>) {
     for mut weapon in &mut weapons.iter_mut() {
-        weapon.repeat_timer.tick(time.delta_seconds);
+        weapon.repeat_timer.tick(time.delta_seconds());
     }
 }
 
@@ -101,7 +101,7 @@ pub fn weapon_trigger(
     assets: &Res<assets::Assets>,
     audio_output: &Res<Audio>,
 ) {
-    if weapon.repeat_timer.finished {
+    if weapon.repeat_timer.finished() {
         projectile::spawn(&mut commands, &asset_server, &assets, &audio_output, transform);
         weapon.repeat_timer.reset();
     }
@@ -118,7 +118,7 @@ pub struct Damage {
 
 pub fn follow(
     mut query: Query<(&AttachedToEntity, Mut<GlobalTransform>, Mut<Transform>)>,
-    entities: Query<Without<AttachedToEntity, &GlobalTransform>>,
+    entities: Query<&GlobalTransform, Without<AttachedToEntity>>,
 ) {
     for (target_entity, mut gtransform, mut transform) in query.iter_mut() {
         if let Ok(parent_transform) = entities.get(target_entity.0) {
@@ -137,8 +137,8 @@ pub fn swivel_at(
         // Rapier is broken by not updating deterministically,
         // so let's work around transforms and just update them manually.
         let translation = na::Translation2::new(
-            transform.translation.x(),
-            transform.translation.y(),
+            transform.translation.x,
+            transform.translation.y,
         );
         // Lol, this is so inefficient it's funny
         let point = translation.inverse_transform_point(&looks_at.0);

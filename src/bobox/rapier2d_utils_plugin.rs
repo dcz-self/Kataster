@@ -27,7 +27,7 @@ pub struct EntityToBodyHandle(pub HashMap<Entity, RigidBodyHandle>);
 fn body_to_entity_system(
     mut bh_to_e: ResMut<BodyHandleToEntity>,
     mut e_to_bh: ResMut<EntityToBodyHandle>,
-    added: Query<(Entity, Added<RigidBodyHandleComponent>)>,
+    added: Query<Entity, Added<RigidBodyHandleComponent>>,
 ) {
     for (entity, body_handle) in &mut added.iter() {
         bh_to_e.0.insert(body_handle.handle(), entity);

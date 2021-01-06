@@ -23,7 +23,7 @@ pub struct Assets {
 }
 
 pub fn setup(
-    mut commands: Commands,
+    commands: &mut Commands,
     asset_server: Res<asset::AssetServer>,
     mut materials: ResMut<asset::Assets<ColorMaterial>>,
     mut texture_atlases: ResMut<asset::Assets<TextureAtlas>>,

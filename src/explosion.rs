@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy::sprite::entity::SpriteBundle;
 use super::assets;
 use super::components::*;
 use super::state::*;
@@ -15,7 +16,7 @@ pub struct Explosion {
     end_scale: f32,
 }
 pub fn spawn_explosion(
-    mut commands: Commands,
+    commands: &mut Commands,
     mut state: Local<SpawnExplosionState>,
     asset_server: Res<AssetServer>,
     assets: Res<assets::Assets>,
@@ -47,7 +48,7 @@ pub fn spawn_explosion(
             ),
         };
         commands
-            .spawn(SpriteComponents {
+            .spawn(SpriteBundle {
                 transform: {
                     Transform::from_translation(Vec3::new(event.x, event.y, -1.0))
                         .mul_transform(Transform::from_scale(Vec3::splat(1.0 / 16.0)))
@@ -66,15 +67,15 @@ pub fn spawn_explosion(
     }
 }
 
-pub fn handle_explosion(
-    mut commands: Commands,
+pub fn handle(
+    commands: &mut Commands,
     time: Res<Time>,
-    mut query: Query<(Entity, &Transform, Mut<Explosion>)>,
+    mut query: Query<(Entity, Mut<Explosion>)>,
 ) {
-    let elapsed = time.delta_seconds;
-    for (entity, transform, mut explosion) in &mut query.iter_mut() {
+    let elapsed = time.delta_seconds();
+    for (entity, mut explosion) in &mut query.iter_mut() {
         explosion.timer.tick(elapsed);
-        if explosion.timer.finished {
+        if explosion.timer.finished() {
             commands.despawn(entity);
         }
     }

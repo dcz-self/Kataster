@@ -115,7 +115,7 @@ impl GenePool {
 
     pub fn preserve(&mut self, genotype: Genotype) {
         let index = self.genotypes.iter()
-            .position(|(candidate, weight)| candidate == &genotype);
+            .position(|(candidate, _weight)| candidate == &genotype);
         match index {
             Some(idx) => { self.genotypes[idx].1 += 1.0 },
             None => self.genotypes.push((genotype, 1.0)),
@@ -130,14 +130,14 @@ pub fn think(
 ) {
     let borg_position = borgs.iter()
         .next() // Only take first borg. Should be expanded for multiplayer.
-        .map(|(body, borg)| {
+        .map(|(body, _borg)| {
             let body = bodies.get(body.handle()).unwrap();
             Point2::from(body.position().translation.vector)
         })
         .unwrap_or(Point2::new(0.0, 0.0));
         
     for (body, mob) in mobs.iter() {
-        let mut body = bodies.get_mut(body.handle()).unwrap();
+        let body = bodies.get_mut(body.handle()).unwrap();
         let point: Point2<f32> = body.position().inverse_transform_point(&borg_position);
         let inputs = Inputs {
             angle_to_player: {
@@ -178,6 +178,6 @@ pub fn count_lifetime(
     // the delta when pausing will be different than unpausing.
     // Maybe switch to a constant tick.
     for mut borg in &mut query.iter_mut() {
-        borg.time_alive += time.delta_seconds;
+        borg.time_alive += time.delta_seconds();
     }
 }

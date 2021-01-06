@@ -7,13 +7,13 @@
 use bevy::app;
 use bevy::app::{ Events, EventReader };
 use bevy::asset::{ Assets, AssetServer };
-use bevy::ecs::{ Commands, Entity, Local, Query, Res, ResMut, With };
+use bevy::ecs::{ Commands, Entity, Local, Query, Res, ResMut, SystemStage, With };
 use bevy::math::{ Rect, Size, Vec3 };
 use bevy::render::color::Color;
 use bevy::render::mesh::Mesh;
 use bevy::sprite::ColorMaterial;
 use bevy::transform::hierarchy::ChildBuilder;
-use bevy::ui::entity::NodeComponents;
+use bevy::ui::entity::NodeBundle;
 use bevy::ui::{ AlignItems, Node, PositionType, Style, Val };
 use bevy_prototype_lyon;
 use bevy_prototype_lyon::prelude::{ point, primitive, FillOptions, PathBuilder, ShapeType, StrokeOptions, TessellationMode };
@@ -24,7 +24,7 @@ use std::collections::HashMap;
 
 
 use bevy::prelude::BuildChildren;
-use bevy::prelude::IntoQuerySystem;
+use bevy::ecs::IntoSystem;
 use std::iter::FromIterator;
 
 
@@ -32,7 +32,7 @@ pub struct Plugin;
 
 impl app::Plugin for Plugin {
     fn build(&self, app: &mut app::AppBuilder) {
-        app.add_stage_after(app::stage::UPDATE, "draw_imm")
+        app.add_stage_after(app::stage::UPDATE, "draw_imm", SystemStage::parallel())
             .add_system_to_stage("draw_imm", draw_preview.system())
             .add_system_to_stage(app::stage::UPDATE, kill_preview.system());
     }
@@ -42,8 +42,8 @@ impl app::Plugin for Plugin {
 struct Preview;
 
 fn kill_preview(
-    mut commands: Commands,
-    preview_ui: Query<With<Preview, Entity>>,
+    commands: &mut Commands,
+    preview_ui: Query<Entity, With<Preview>>,
 ) {
     for e in preview_ui.iter() {
         commands.despawn(e);
@@ -74,7 +74,6 @@ fn val_to_color(val: f32) -> Color {
 
 fn draw_brain(
     commands: &mut ChildBuilder,
-    asset_server: &Res<AssetServer>,
     materials: &mut ResMut<Assets<ColorMaterial>>,
     mut meshes: &mut ResMut<Assets<Mesh>>,
     brain: &shooter::Brain,
@@ -192,15 +191,13 @@ fn draw_brain(
 }
 
 
-
 fn draw_preview(
-    mut commands: Commands,
+    commands: &mut Commands,
     mut state: Local<FedEvents>,
-    asset_server: Res<AssetServer>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
     fed_events: Res<Events<BrainFed>>,
-    brains: Query<With<Borg, &shooter::Brain>>,
+    brains: Query<&shooter::Brain, With<Borg>>,
 ) {
     let brain_feed = state.event_reader.iter(&fed_events)
         .next()
@@ -210,7 +207,7 @@ fn draw_preview(
     
     if let Some((brain, inputs)) = brain_feed {
         commands
-            .spawn(NodeComponents {
+            .spawn(NodeBundle {
                 style: Style {
                     size: Size::new(Val::Px(200.0), Val::Px(200.0)),
                     position_type: PositionType::Absolute,
@@ -225,7 +222,6 @@ fn draw_preview(
             .with(Preview)
             .with_children(|parent| draw_brain(
                 parent,
-                &asset_server,
                 &mut materials,
                 &mut meshes,
                 brain,

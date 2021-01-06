@@ -4,13 +4,13 @@ use bevy::diagnostic::{Diagnostics, FrameTimeDiagnosticsPlugin};
 use bevy::ecs::{ Commands, Query, Res };
 use bevy::render::color::Color;
 use bevy::text::TextStyle;
-use bevy::ui::entity::{ TextComponents, UiCameraComponents };
+use bevy::ui::entity::{ TextBundle, CameraUiBundle };
 use bevy::ui::prelude::AlignSelf;
 use bevy::ui::widget::{ Text };
 use bevy::ui::Style;
 
 
-use bevy::prelude::IntoQuerySystem;
+use bevy::ecs::IntoSystem;
 
 
 // A unit struct to help identify the FPS UI component, since there may be many Text components
@@ -26,12 +26,12 @@ fn text_update_system(diagnostics: Res<Diagnostics>, mut query: Query<(&mut Text
     }
 }
 
-fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
+fn setup(commands: &mut Commands, asset_server: Res<AssetServer>) {
     commands
         // 2d camera
-        .spawn(UiCameraComponents::default())
+        .spawn(CameraUiBundle::default())
         // texture
-        .spawn(TextComponents {
+        .spawn(TextBundle {
             style: Style {
                 align_self: AlignSelf::FlexEnd,
                 ..Default::default()
@@ -42,6 +42,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
                 style: TextStyle {
                     font_size: 10.0,
                     color: Color::WHITE,
+                    ..Default::default()
                 },
             },
             ..Default::default()

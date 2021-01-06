@@ -401,7 +401,7 @@ pub struct BrainFed {
 }
 
 pub fn think(
-    mut commands: Commands,
+    mut commands: &mut Commands,
     mut brain_fed_events: ResMut<Events<BrainFed>>,
     asset_server: Res<AssetServer>,
     assets: Res<assets::Assets>,
@@ -409,7 +409,7 @@ pub fn think(
     mut bodies: ResMut<RigidBodySet>,
     mobs: Query<(&RigidBodyHandleComponent, &Mob)>,
     mut borgs: Query<(Entity, &RigidBodyHandleComponent, &Borg, Mut<Brain>)>,
-    mut weapons: Query<(Without<LooksAt, Mut<Weapon>>, Mut<Transform>, &AttachedToEntity)>,
+    mut weapons: Query<(Mut<Weapon>, Mut<Transform>, &AttachedToEntity), Without<LooksAt>>,
 ) {
     let mob_positions: Vec<_>
         = mobs.iter()

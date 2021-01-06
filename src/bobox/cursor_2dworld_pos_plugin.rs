@@ -6,7 +6,7 @@ use bevy::{
 /// the last know cursor position in window coordinates and in world coordinate
 /// using the transform and orthographic projection of the Camera named 'camera2d'
 pub struct Cursor2dWorldPosPlugin;
-
+/*
 impl Plugin for Cursor2dWorldPosPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.add_resource(Cursor2dWorldPos::default())
@@ -40,6 +40,7 @@ struct CursorSystemLocalState {
     cursor_moved_event_reader: EventReader<CursorMoved>,
 }
 const CAMERA2D_NAME: &str = "Camera2d";
+
 /// This system prints out all mouse events as they come in
 fn cursor_pos_system(
     mut state: Local<CursorSystemLocalState>,
@@ -65,3 +66,4 @@ fn cursor_pos_system(
         }
     }
 }
+*/

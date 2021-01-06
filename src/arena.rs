@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy::sprite::entity::{ SpriteBundle, SpriteSheetBundle };
 use bevy_rapier2d::{
     physics::RigidBodyHandleComponent,
     rapier::{
@@ -45,7 +46,7 @@ pub struct Arena {
 }
 
 pub fn setup_arena(
-    commands: Commands,
+    commands: &mut Commands,
     mut runstate: ResMut<RunState>,
     assets: Res<assets::Assets>,
 ) {
@@ -64,7 +65,7 @@ pub fn setup_arena(
 }
 
 fn spawn_borg(
-    mut commands: Commands,
+    commands: &mut Commands,
     mut runstate: ResMut<RunState>,
     assets: Res<assets::Assets>,
     control: ControlledBy,
@@ -73,7 +74,7 @@ fn spawn_borg(
     let collider = ColliderBuilder::ball(5.0);
 
     commands
-        .spawn(SpriteComponents {
+        .spawn(SpriteBundle {
             transform: Transform {
                 translation: Vec3::new(0.0, 0.0, -5.0),
                 ..Default::default()
@@ -91,7 +92,7 @@ fn spawn_borg(
         .with(collider)
         .with(ValidStates::from_func(GameState::is_live_arena))
         .with_children(|parent| {
-            parent.spawn(SpriteComponents {
+            parent.spawn(SpriteBundle {
                 transform: Transform {
                     translation: Vec3::new(0.0, 100.0, 0.0),
                     scale: Vec3::splat(1.0/32.0),
@@ -118,7 +119,7 @@ fn spawn_borg(
     let borg_entity = commands.current_entity().unwrap();
 
     commands
-        .spawn(SpriteComponents {
+        .spawn(SpriteBundle {
             transform: Transform {
                 translation: Vec3::new(0.0, 0.0, 0.0),
                 scale: Vec3::splat(1.0/8.0),
@@ -149,7 +150,7 @@ pub struct SpawnAsteroidState {
 }
 
 pub fn spawn_asteroid_system(
-    mut commands: Commands,
+    commands: &mut Commands,
     mut local_state: Local<SpawnAsteroidState>,
     assets: Res<assets::Assets>,
     events: Res<Events<AsteroidSpawnEvent>>,
@@ -159,7 +160,7 @@ pub fn spawn_asteroid_system(
             .translation(event.x, event.y);
         let collider = ColliderBuilder::ball(6.0).friction(-0.3);
         commands
-            .spawn(SpriteSheetComponents {
+            .spawn(SpriteSheetBundle {
                 texture_atlas: assets.louse.clone().unwrap(),
                 sprite: TextureAtlasSprite::new(0),
                 transform: {
@@ -186,19 +187,18 @@ pub fn arena_spawn(
     time: Res<Time>,
     mut runstate: ResMut<RunState>,
     mut asteroid_spawn_events: ResMut<Events<AsteroidSpawnEvent>>,
-    asteroids: Query<&Asteroid>,
 ) {
     if let GameState::Arena(_) = runstate.gamestate.current() {
         let mut arena = runstate.arena.as_mut().unwrap();
-        arena.mob_virility += time.delta_seconds;
+        arena.mob_virility += time.delta_seconds();
         // Mobs per second. Double every 30sec.
         let spawn_rate = 0.5 * (2.0f32).powf(arena.mob_virility / 30.0);
-        let expected_spawn_this_tick = time.delta_seconds * spawn_rate;
+        let expected_spawn_this_tick = time.delta_seconds() * spawn_rate;
         let dist = Poisson::new(expected_spawn_this_tick).unwrap();
 
         let mut rng = thread_rng();
-        let count: u64 = dist.sample(&mut rng);
-        for mobs in 0..count {
+        let mobcount: u64 = dist.sample(&mut rng);
+        for _ in 0..mobcount {
             let x: f32 = rng.gen_range(-0.5, 0.5);
             let y: f32 = rng.gen_range(-0.5, 0.5);
             if x.abs() > 0.25 || y.abs() > 0.25 {
@@ -222,7 +222,7 @@ pub fn hold_borgs(
         return;
     }
     for (body_handle, _borg) in query.iter() {
-        let mut body = bodies.get_mut(body_handle.handle()).unwrap();
+        let body = bodies.get_mut(body_handle.handle()).unwrap();
         let mut x = body.position().translation.vector.x;
         let mut y = body.position().translation.vector.y;
         let mut xvel = body.linvel().x;

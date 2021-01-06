@@ -7,7 +7,7 @@ use byteorder::LittleEndian;
 use super::tga;
 
 
-use bevy::type_registry::TypeUuid;
+//use bevy::type_registry::TypeUuid;
 use byteorder::ByteOrder;
 use serde::Deserialize;
 
@@ -20,8 +20,8 @@ fn try_split(data: &[u8], idx: usize) -> Option<(&[u8], &[u8])> {
     }
 }
 
-#[derive(Debug, Deserialize, TypeUuid)]
-#[uuid = "1b0034cd-204a-4df7-93b9-1e0772ff1046"]
+//#[derive(Debug, Deserialize, TypeUuid)]
+//#[uuid = "1b0034cd-204a-4df7-93b9-1e0772ff1046"]
 pub struct Paq;
 
 #[derive(Default)]

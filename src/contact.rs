@@ -7,7 +7,6 @@ use bevy_rapier2d::{
         geometry::{ContactEvent, Proximity},
     },
 };
-use super::bobox::BodyHandleToEntity;
 use super::components::Borg;
 use super::components::*;
 use super::shooter;
@@ -20,12 +19,10 @@ enum Contacts {
 }
 
 pub fn contact_system(
-    mut commands: Commands,
-    mut asteroid_spawn_events: ResMut<Events<AsteroidSpawnEvent>>,
+    commands: &mut Commands,
     mut explosion_spawn_events: ResMut<Events<ExplosionSpawnEvent>>,
     mut runstate: ResMut<RunState>,
     events: Res<EventQueue>,
-    bh_to_e: Res<BodyHandleToEntity>,
     bodies: ResMut<RigidBodySet>,
     damages: Query<&Damage>,
     genotypes: Query<&shooter::Genotype>,
@@ -42,8 +39,10 @@ pub fn contact_system(
     while let Ok(contact_event) = events.contact_events.pop() {
         match contact_event {
             ContactEvent::Started(h1, h2) => {
-                let e1 = *(bh_to_e.0.get(&h1).unwrap());
-                let e2 = *(bh_to_e.0.get(&h2).unwrap());
+                let b1 = bodies.get(h1).unwrap();
+                let b2 = bodies.get(h2).unwrap();
+                let e1 = Entity::from_bits(b1.user_data as u64);
+                let e2 = Entity::from_bits(b2.user_data as u64);
                 if ships.get_mut(e1).is_ok() && damages.get(e2).is_ok() {
                     contacts.push(Contacts::ShipAsteroid(e1, e2));
                 } else if ships.get_mut(e2).is_ok() && damages.get(e1).is_ok() {
@@ -54,10 +53,12 @@ pub fn contact_system(
         };
     }
     while let Ok(proximity_event) = events.proximity_events.pop() {
-        let mut asteroids = &mut mobs;
+        let asteroids = &mut mobs;
         if proximity_event.new_status == Proximity::Intersecting {
-            let e1 = *(bh_to_e.0.get(&proximity_event.collider1).unwrap());
-            let e2 = *(bh_to_e.0.get(&proximity_event.collider2).unwrap());
+            let b1 = bodies.get(proximity_event.collider1).unwrap();
+            let b2 = bodies.get(proximity_event.collider2).unwrap();
+            let e1 = Entity::from_bits(b1.user_data as u64);
+            let e2 = Entity::from_bits(b2.user_data as u64);
             if asteroids.get_mut(e2).is_ok() && lasers.get_mut(e1).is_ok() {
                 contacts.push(Contacts::LaserAsteroid(e1, e2));
             } else if asteroids.get_mut(e1).is_ok() && lasers.get_mut(e2).is_ok() {
@@ -68,29 +69,22 @@ pub fn contact_system(
     for contact in contacts.into_iter() {
         match contact {
             Contacts::LaserAsteroid(e1, e2) => {
-                let mut asteroids = &mut mobs;
+                let asteroids = &mut mobs;
                 let laser_handle = handles
                     .get(e1)
                     .unwrap()
                     .handle();
                 let asteroid = asteroids.get_mut(e2).unwrap();
-                let asteroid_handle = handles
-                    .get(e2)
-                    .unwrap()
-                    .handle();
-                runstate.score = runstate.score.and_then(|score| {
-                    Some(
-                        score
-                            + match asteroid.size {
-                                AsteroidSize::Small => 40,
-                                AsteroidSize::Medium => 20,
-                                AsteroidSize::Big => 10,
-                            },
-                    )
+                runstate.score = runstate.score.map(|score| {
+                    score
+                        + match asteroid.size {
+                            AsteroidSize::Small => 40,
+                            AsteroidSize::Medium => 20,
+                            AsteroidSize::Big => 10,
+                        }
                 });
                 {
                     let laser_body = bodies.get(laser_handle).unwrap();
-                    let asteroid_body = bodies.get(asteroid_handle).unwrap();
 
                     explosion_spawn_events.send(ExplosionSpawnEvent {
                         kind: ExplosionKind::LaserOnAsteroid,

@@ -1,6 +1,7 @@
 use super::components::*;
 use super::state::*;
 use bevy::prelude::*;
+use bevy::sprite::entity::SpriteBundle;
 use bevy_rapier2d::{
     na::Vector2,
     rapier::{
@@ -15,7 +16,7 @@ use super::assets;
 
 
 pub fn spawn(
-    mut commands: &mut Commands,
+    commands: &mut Commands,
     asset_server: &Res<AssetServer>,
     assets: &Res<assets::Assets>,
     audio_output: &Res<Audio>,
@@ -32,8 +33,8 @@ pub fn spawn(
     let collider = ColliderBuilder::cuboid(0.25, 1.0).sensor(true);
     let transform = Transform {
         translation: Vec3::new(
-            transform.translation.x(),
-            transform.translation.y(),
+            transform.translation.x,
+            transform.translation.y,
             -4.0,
         ),
         rotation: transform.rotation.clone(),
@@ -41,7 +42,7 @@ pub fn spawn(
         ..Default::default()
     };
     commands
-        .spawn(SpriteComponents {
+        .spawn(SpriteBundle {
             transform,
             // Spawn needs to happen before transform in order for the global
             // to be corrrectly rendered.
@@ -63,14 +64,14 @@ pub fn spawn(
 }
 
 pub fn despawn_laser_system(
-    mut commands: Commands,
+    commands: &mut Commands,
     runstate: Res<RunState>,
     time: Res<Time>,
     mut query: Query<(Entity, Mut<Laser>)>,
 ) {
     for (entity, mut laser) in &mut query.iter_mut() {
-        laser.despawn_timer.tick(time.delta_seconds);
-        if laser.despawn_timer.finished {
+        laser.despawn_timer.tick(time.delta_seconds());
+        if laser.despawn_timer.finished() {
             commands.despawn(entity);
         }
     }

@@ -27,13 +27,13 @@ pub fn get_nearest(position: &Point2<f32>, others: &[Point2<f32>]) -> Option<Poi
 
 pub fn into_isometry_2d(translation: Vec3, rotation: Quat) -> Isometry<f32> {
     let (axis, angle) = rotation.to_axis_angle();
-    let angle = match axis.z() > 0.0 {
+    let angle = match axis.z > 0.0 {
         true => angle,
         false => -angle,
     };
         
     Isometry::from_parts(
-        Translation::from(Vector::new(translation.x(), translation.y())),
+        Translation::from(Vector::new(translation.x, translation.y)),
         UnitComplex::new(angle),
     )
 }

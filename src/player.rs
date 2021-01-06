@@ -19,36 +19,38 @@ pub struct KeyboardWalk;
 
 pub fn point_at_mouse(
     cursor_moved: Res<Events<CursorMoved>>,
-    mut looks_at: Mut<LooksAt>,
+    mut looks_at: Query<Mut<LooksAt>>,
 ) {
-    for event in EventReader::<CursorMoved>::default().iter(&cursor_moved) {
-        let event_position = Point2::new(event.position.x(), event.position.y());
-        let target_position = Translation2::new(
-            arena::WINDOW_WIDTH as f32 / 2.0,
-            arena::WINDOW_HEIGHT as f32 / 2.0,
-        ).inverse_transform_point(&event_position);
-        let target_position = target_position * arena::CAMERA_SCALE;
-        looks_at.0 = target_position;
-        // TODO: move this to rendering/movement.
-        // Position needs to be updated on every move.
-        
-        //transform.rotation
-        /*
-        let point = body.position.translation.inverse_transform_point(&borg.looks_at);
-        // Omg, why is dealing with Rapier so hard?
-        // Every property has 3 representations
-        // and they never convert into each other directly.
-        let rot = Rotation2::rotation_between(
-            &Vector2::new(0.0, 1.0),
-            &Vector2::new(point.x, point.y)
-        );
-        body.position.rotation = UnitComplex::from_rotation_matrix(&rot);*/
+    for mut looks_at in looks_at.iter_mut() {
+        for event in EventReader::<CursorMoved>::default().iter(&cursor_moved) {
+            let event_position = Point2::new(event.position.x, event.position.y);
+            let target_position = Translation2::new(
+                arena::WINDOW_WIDTH as f32 / 2.0,
+                arena::WINDOW_HEIGHT as f32 / 2.0,
+            ).inverse_transform_point(&event_position);
+            let target_position = target_position * arena::CAMERA_SCALE;
+            looks_at.0 = target_position;
+            // TODO: move this to rendering/movement.
+            // Position needs to be updated on every move.
+            
+            //transform.rotation
+            /*
+            let point = body.position.translation.inverse_transform_point(&borg.looks_at);
+            // Omg, why is dealing with Rapier so hard?
+            // Every property has 3 representations
+            // and they never convert into each other directly.
+            let rot = Rotation2::rotation_between(
+                &Vector2::new(0.0, 1.0),
+                &Vector2::new(point.x, point.y)
+            );
+            body.position.rotation = UnitComplex::from_rotation_matrix(&rot);*/
+        }
     }
 }
 
 
 pub fn mouse_shoot(
-    mut commands: Commands,
+    mut commands: &mut Commands,
     runstate: Res<RunState>,
     asset_server: Res<AssetServer>,
     assets: Res<assets::Assets>,
@@ -85,7 +87,7 @@ pub fn keyboard_walk(
     };
     
     for (body_handle, borg, _walk) in query.iter() {
-        let mut body = bodies.get_mut(body_handle.handle()).unwrap();
+        let body = bodies.get_mut(body_handle.handle()).unwrap();
         let rotation = rotation as f32 * borg.rotation_speed;
         if rotation != body.angvel() {
             body.set_angvel(rotation, true);

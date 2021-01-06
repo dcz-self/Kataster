@@ -2,11 +2,12 @@ use super::arena::START_LIFE;
 use super::components::*;
 use super::state::{ GameState, Mode, RunState, ValidStates };
 use bevy::prelude::*;
+use bevy::ui::entity::{ ImageBundle, NodeBundle, TextBundle };
 
 pub struct DrawBlinkTimer(pub Timer);
 
 pub fn start_menu(
-    mut commands: Commands,
+    commands: &mut Commands,
     runstate: ResMut<RunState>,
     asset_server: Res<AssetServer>,
     mut materials: ResMut<Assets<ColorMaterial>>,
@@ -14,7 +15,7 @@ pub fn start_menu(
     if let Some(GameState::MainMenu) = runstate.gamestate.entering() {
         let font_handle = asset_server.load("kenvector_future.ttf");
         commands
-            .spawn(NodeComponents {
+            .spawn(NodeBundle {
                 style: Style {
                     size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
                     align_items: AlignItems::Center,
@@ -23,55 +24,45 @@ pub fn start_menu(
                     ..Default::default()
                 },
                 material: materials.add(Color::NONE.into()),
-                draw: Draw {
-                    is_transparent: true,
-                    ..Default::default()
-                },
                 ..Default::default()
             })
             .with(ValidStates::from_func(|state| state == &GameState::MainMenu))
             .with_children(|parent| {
                 parent
-                    .spawn(TextComponents {
-                        style: Style {
-                            ..Default::default()
-                        },
+                    .spawn(TextBundle {
                         text: Text {
                             value: "Breedmatic".to_string(),
                             font: font_handle.clone(),
                             style: TextStyle {
                                 font_size: 100.0,
                                 color: Color::rgb_u8(0x00, 0xAA, 0xAA),
+                                ..Default::default()
                             },
                         },
                         ..Default::default()
                     })
                     .with(ValidStates::from_func(|state| state == &GameState::MainMenu))
-                    .spawn(TextComponents {
-                        style: Style {
-                            ..Default::default()
-                        },
+                    .spawn(TextBundle {
                         text: Text {
                             value: "1: Start shooting".to_string(),
                             font: font_handle.clone(),
                             style: TextStyle {
                                 font_size: 50.0,
                                 color: Color::rgb_u8(0x00, 0x44, 0x44),
+                                ..Default::default()
                             },
                         },
                         ..Default::default()
                     })
                     .with(ValidStates::from_func(|state| state == &GameState::MainMenu))
-                    .spawn(TextComponents {
-                        style: Style {
-                            ..Default::default()
-                        },
+                    .spawn(TextBundle {
                         text: Text {
                             value: "2: AI mode".to_string(),
                             font: font_handle,
                             style: TextStyle {
                                 font_size: 50.0,
                                 color: Color::rgb_u8(0x00, 0x44, 0x44),
+                                ..Default::default()
                             },
                         },
                         ..Default::default()
@@ -82,7 +73,7 @@ pub fn start_menu(
 }
 
 pub fn gameover_menu(
-    mut commands: Commands,
+    commands: &mut Commands,
     runstate: ResMut<RunState>,
     asset_server: Res<AssetServer>,
     mut materials: ResMut<Assets<ColorMaterial>>,
@@ -90,7 +81,7 @@ pub fn gameover_menu(
     if let Some(GameState::ArenaOver(Mode::Player)) = runstate.gamestate.entering() {
         let font_handle = asset_server.load("kenvector_future.ttf");
         commands
-            .spawn(NodeComponents {
+            .spawn(NodeBundle {
                 style: Style {
                     size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
                     align_items: AlignItems::Center,
@@ -99,40 +90,32 @@ pub fn gameover_menu(
                     ..Default::default()
                 },
                 material: materials.add(Color::NONE.into()),
-                draw: Draw {
-                    is_transparent: true,
-                    ..Default::default()
-                },
                 ..Default::default()
             })
             .with(ValidStates::from_func(|state| state == &GameState::ArenaOver(Mode::Player)))
             .with_children(|parent| {
                 parent
-                    .spawn(TextComponents {
-                        style: Style {
-                            ..Default::default()
-                        },
+                    .spawn(TextBundle {
                         text: Text {
                             value: "Game Over".to_string(),
                             font: font_handle.clone(),
                             style: TextStyle {
                                 font_size: 100.0,
                                 color: Color::rgb_u8(0xAA, 0x22, 0x22),
+                                ..Default::default()
                             },
                         },
                         ..Default::default()
                     })
                     .with(ValidStates::from_func(|state| state == &GameState::ArenaOver(Mode::Player)))
-                    .spawn(TextComponents {
-                        style: Style {
-                            ..Default::default()
-                        },
+                    .spawn(TextBundle {
                         text: Text {
                             value: "enter".to_string(),
                             font: font_handle,
                             style: TextStyle {
                                 font_size: 50.0,
                                 color: Color::rgb_u8(0x44, 0x11, 0x11),
+                                ..Default::default()
                             },
                         },
                         ..Default::default()
@@ -144,7 +127,7 @@ pub fn gameover_menu(
 }
 
 pub fn pause_menu(
-    mut commands: Commands,
+    commands: &mut Commands,
     runstate: ResMut<RunState>,
     asset_server: Res<AssetServer>,
     mut materials: ResMut<Assets<ColorMaterial>>,
@@ -156,7 +139,7 @@ pub fn pause_menu(
         );
         let font_handle = asset_server.load("kenvector_future.ttf");
         commands
-            .spawn(NodeComponents {
+            .spawn(NodeBundle {
                 style: Style {
                     position_type: PositionType::Absolute,
                     size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
@@ -165,25 +148,19 @@ pub fn pause_menu(
                     ..Default::default()
                 },
                 material: materials.add(Color::NONE.into()),
-                draw: Draw {
-                    is_transparent: true,
-                    ..Default::default()
-                },
                 ..Default::default()
             })
             .with(states.clone())
             .with_children(|parent| {
                 parent
-                    .spawn(TextComponents {
-                        style: Style {
-                            ..Default::default()
-                        },
+                    .spawn(TextBundle {
                         text: Text {
                             value: "pause".to_string(),
                             font: font_handle,
                             style: TextStyle {
                                 font_size: 100.0,
                                 color: Color::rgb_u8(0xF8, 0xE4, 0x73),
+                                ..Default::default()
                             },
                         },
                         ..Default::default()
@@ -194,15 +171,8 @@ pub fn pause_menu(
     }
 }
 
-pub fn draw_blink_system(time: Res<Time>, mut timer: Mut<DrawBlinkTimer>, mut draw: Mut<Draw>) {
-    timer.0.tick(time.delta_seconds);
-    if timer.0.finished {
-        draw.is_visible = !draw.is_visible;
-    }
-}
-
 pub fn game_ui_spawn(
-    mut commands: Commands,
+    commands: &mut Commands,
     runstate: ResMut<RunState>,
     asset_server: Res<AssetServer>,
     mut materials: ResMut<Assets<ColorMaterial>>,
@@ -215,7 +185,7 @@ pub fn game_ui_spawn(
     {
         let font_handle = asset_server.load("kenvector_future.ttf");
         commands
-            .spawn(NodeComponents {
+            .spawn(NodeBundle {
                 style: Style {
                     position_type: PositionType::Absolute,
                     size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
@@ -225,16 +195,12 @@ pub fn game_ui_spawn(
                     ..Default::default()
                 },
                 material: materials.add(Color::NONE.into()),
-                draw: Draw {
-                    is_transparent: true,
-                    ..Default::default()
-                },
                 ..Default::default()
             })
             .with(ValidStates::from_func(GameState::is_arena))
             .with_children(|parent| {
                 parent
-                    .spawn(TextComponents {
+                    .spawn(TextBundle {
                         style: Style {
                             justify_content: JustifyContent::FlexEnd,
                             margin: Rect {
@@ -251,6 +217,7 @@ pub fn game_ui_spawn(
                             style: TextStyle {
                                 font_size: 50.0,
                                 color: Color::rgb_u8(0x00, 0xAA, 0xAA),
+                                ..Default::default()
                             },
                         },
                         ..Default::default()
@@ -260,7 +227,7 @@ pub fn game_ui_spawn(
             })
             // Life counters
             // Not kept in 'GameOver' state, simplifying last counter removal.
-            .spawn(NodeComponents {
+            .spawn(NodeBundle {
                 style: Style {
                     position_type: PositionType::Absolute,
                     size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
@@ -270,17 +237,13 @@ pub fn game_ui_spawn(
                     ..Default::default()
                 },
                 material: materials.add(Color::NONE.into()),
-                draw: Draw {
-                    is_transparent: true,
-                    ..Default::default()
-                },
                 ..Default::default()
             })
             .with(ValidStates::from_func(GameState::is_live_arena))
             .with_children(|parent| {
                 for i in 1..(START_LIFE + 1) {
                     parent
-                        .spawn(ImageComponents {
+                        .spawn(ImageBundle {
                             style: Style {
                                 margin: Rect {
                                     left: Val::Px(10.0),
@@ -295,10 +258,6 @@ pub fn game_ui_spawn(
                                     .load("playerLife1_red.png")
                                     .into(),
                             ),
-                            draw: Draw {
-                                is_transparent: true,
-                                ..Default::default()
-                            },
                             ..Default::default()
                         })
                         .with(ValidStates::from_func(GameState::is_live_arena))
@@ -308,11 +267,16 @@ pub fn game_ui_spawn(
     }
 }
 
-pub fn score_ui_system(runstate: ChangedRes<RunState>, mut text: Mut<Text>, _uiscore: &UiScore) {
+pub fn score(
+    runstate: ChangedRes<RunState>, 
+    mut query: Query<(Mut<Text>, &UiScore)>,
+) {
     if !runstate.gamestate.current().is_arena() {
         return;
     }
-    text.value = format!("{}", runstate.score.unwrap());
+    for (mut text, _uiscore) in query.iter_mut() {
+        text.value = format!("{}", runstate.score.unwrap());
+    }
 }
 
 pub fn life_ui_system(
@@ -326,7 +290,7 @@ pub fn life_ui_system(
     if let Some(player) = runstate.player {
         if let Ok(ship) = ship_query.get(player) {
             for (mut draw, uilife) in &mut uilife_query.iter_mut() {
-                draw.is_visible = ship.life >= uilife.min;
+                //draw.is_visible = ship.life >= uilife.min;
             }
         }
     }
