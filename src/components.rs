@@ -38,12 +38,13 @@ pub struct UiScore {}
 pub struct UiLife {
     pub min: u32,
 }
-
+#[derive(Debug)]
 pub enum ExplosionKind {
     ShipDead,
     ShipContact,
     LaserOnAsteroid,
 }
+#[derive(Debug)]
 pub struct ExplosionSpawnEvent {
     pub kind: ExplosionKind,
     pub x: f32,

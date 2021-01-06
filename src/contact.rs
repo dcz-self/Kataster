@@ -85,7 +85,6 @@ pub fn contact_system(
                 });
                 {
                     let laser_body = bodies.get(laser_handle).unwrap();
-
                     explosion_spawn_events.send(ExplosionSpawnEvent {
                         kind: ExplosionKind::LaserOnAsteroid,
                         x: laser_body.position().translation.x,

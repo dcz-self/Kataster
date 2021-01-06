@@ -105,7 +105,7 @@ fn main() {
         .add_startup_system(setup.system())
         .add_system_to_stage(stage::POST_UPDATE, contact::contact_system.system())
         .add_system_to_stage("HANDLE_CONTACT", spawn_asteroid_system.system())
-        .add_system_to_stage("HANDLE_EXPLOSION", spawn_explosion.system())
+        .add_system_to_stage("HANDLE_EXPLOSION", explosion::spawn.system())
         .add_system_to_stage("HANDLE_RUNSTATE", runstate_fsm.system())
         .add_system_to_stage("HANDLE_EXIT", state_exit_despawn.system())
         .add_resource(RunState::new(GameState::MainMenu))
