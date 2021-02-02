@@ -112,7 +112,7 @@ pub fn state_exit_despawn(
 ) {
     for (entity, for_states) in &mut query.iter() {
         if runstate.gamestate.exiting_group(for_states) {
-            commands.despawn(entity);
+            commands.despawn_recursive(entity);
         }
     }
 }

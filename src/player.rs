@@ -127,15 +127,7 @@ pub fn user_input_system(
             }
         },
         GameState::MainMenu => {
-            if input.just_pressed(KeyCode::Key1) {
-                runstate.gamestate.transit_to(GameState::Arena(Mode::Player));
-            }
-            if input.just_pressed(KeyCode::Key2) {
-                runstate.gamestate.transit_to(GameState::Arena(Mode::AI));
-            }
-            if input.just_pressed(KeyCode::Escape) {
-                app_exit_events.send(AppExit);
-            }
+            // Handled in UI
         },
         GameState::ArenaOver(Mode::Player) => {
             if input.just_pressed(KeyCode::Return) {

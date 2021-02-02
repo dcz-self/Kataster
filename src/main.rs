@@ -79,6 +79,7 @@ fn main() {
         .add_system(hold_borgs.system())
         .add_system(mob::count_lifetime.system())
         .add_system_to_stage(stage::POST_UPDATE, user_input_system.system())
+        .add_system_to_stage(stage::POST_UPDATE, ui::keyboard_menu_system.system())
         .add_system_to_stage(stage::POST_UPDATE, arena::end_ai_round.system())
         .add_system_to_stage(stage::POST_UPDATE, arena::start_ai_round.system())
         .add_system(player::point_at_mouse.system())

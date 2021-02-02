@@ -2,6 +2,7 @@ use super::arena::START_LIFE;
 use super::buttons;
 use super::components::*;
 use super::state::{ GameState, Mode, RunState, ValidStates };
+use bevy::app::AppExit;
 use bevy::prelude::*;
 use bevy::prelude::{ ChildBuilder, Handle, Font };
 use bevy::ui::entity::{ ButtonBundle, ImageBundle, NodeBundle, TextBundle };
@@ -306,5 +307,27 @@ pub fn life_ui_system(
                 //draw.is_visible = ship.life >= uilife.min;
             }
         }
+    }
+}
+
+
+pub fn keyboard_menu_system(
+    mut runstate: ResMut<RunState>,
+    input: Res<Input<KeyCode>>,
+    mut app_exit_events: ResMut<Events<AppExit>>,
+) {
+    match runstate.gamestate.current().clone() {
+        GameState::MainMenu => {
+            if input.just_pressed(KeyCode::Key1) {
+                runstate.gamestate.transit_to(GameState::Arena(Mode::Player));
+            }
+            if input.just_pressed(KeyCode::Key2) {
+                runstate.gamestate.transit_to(GameState::Arena(Mode::AI));
+            }
+            if input.just_pressed(KeyCode::Escape) {
+                app_exit_events.send(AppExit);
+            }
+        },
+        _ => {}
     }
 }
