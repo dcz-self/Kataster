@@ -9,6 +9,7 @@ use bevy_rapier2d::physics::RapierPhysicsPlugin;
 mod arena;
 mod assets;
 mod brain;
+mod buttons;
 mod components;
 mod contact;
 mod debug;
@@ -58,6 +59,7 @@ fn main() {
         .add_plugin(fps::Plugin)
         //.add_plugin(viewer::Plugin)
         .add_plugins(DefaultPlugins)
+        .add_plugin(buttons::Plugin)
         //.init_asset_loader::<paq::Loader>()
         .add_resource(RapierConfiguration {
             gravity: Vector2::zeros(),

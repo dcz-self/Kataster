@@ -73,7 +73,6 @@ pub struct Mob {
     /// Max movement speed
     pub speed: f32,
 }
-pub type Asteroid = Mob;
 
 impl Mob {
     pub fn genotype(&self) -> &mob::Brain {

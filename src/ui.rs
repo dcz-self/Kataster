@@ -1,8 +1,9 @@
 use super::arena::START_LIFE;
+use super::buttons;
 use super::components::*;
 use super::state::{ GameState, Mode, RunState, ValidStates };
 use bevy::prelude::*;
-use bevy::ui::entity::{ ImageBundle, NodeBundle, TextBundle };
+use bevy::ui::entity::{ ButtonBundle, ImageBundle, NodeBundle, TextBundle };
 
 pub struct DrawBlinkTimer(pub Timer);
 
@@ -11,6 +12,7 @@ pub fn start_menu(
     runstate: ResMut<RunState>,
     asset_server: Res<AssetServer>,
     mut materials: ResMut<Assets<ColorMaterial>>,
+    button_materials: Res<buttons::Materials>,
 ) {
     if let Some(GameState::MainMenu) = runstate.gamestate.entering() {
         let font_handle = asset_server.load("kenvector_future.ttf");
@@ -42,17 +44,27 @@ pub fn start_menu(
                         ..Default::default()
                     })
                     .with(ValidStates::from_func(|state| state == &GameState::MainMenu))
-                    .spawn(TextBundle {
-                        text: Text {
-                            value: "1: Start shooting".to_string(),
-                            font: font_handle.clone(),
-                            style: TextStyle {
-                                font_size: 50.0,
-                                color: Color::rgb_u8(0x00, 0x44, 0x44),
-                                ..Default::default()
-                            },
+                    .spawn(ButtonBundle {
+                        style: Style {
+                            // force some width
+                            ..Default::default()
                         },
+                        material: button_materials.normal.clone(),
                         ..Default::default()
+                    })
+                    .with_children(|parent| {
+                        parent.spawn(TextBundle {
+                            text: Text {
+                                value: "1: Start shooting".to_string(),
+                                font: font_handle.clone(),
+                                style: TextStyle {
+                                    font_size: 50.0,
+                                    color: Color::rgb_u8(0x00, 0x44, 0x44),
+                                    ..Default::default()
+                                },
+                            },
+                            ..Default::default()
+                        });
                     })
                     .with(ValidStates::from_func(|state| state == &GameState::MainMenu))
                     .spawn(TextBundle {
