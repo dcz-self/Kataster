@@ -7,12 +7,15 @@
 
 use bevy::app;
 use bevy::asset::{ Assets, Handle };
-use bevy::ecs::{ Commands, Res, ResMut, Resources };
+use bevy::ecs::{ Changed, Commands, Mut, Mutated, Query, Res, ResMut, Resources, With };
 use bevy::render::color::Color;
 use bevy::sprite::ColorMaterial;
+use bevy::ui::Interaction;
+use bevy::ui::widget::Button;
 
 
 use bevy::ecs::FromResources;
+use bevy::prelude::IntoSystem;
 
 
 pub struct Plugin;
@@ -20,8 +23,8 @@ pub struct Plugin;
 
 impl app::Plugin for Plugin {
     fn build(&self, app: &mut app::AppBuilder) {
-        //app.add_stage_before(render::stage::RENDER, "prerender", SystemStage::parallel())
-        app.init_resource::<Materials>();
+        app.init_resource::<Materials>()
+            .add_system(highlight.system());
     }
 }
 
@@ -39,8 +42,24 @@ impl FromResources for Materials {
         let mut materials = resources.get_mut::<Assets<ColorMaterial>>().unwrap();
         Materials {
             normal: materials.add(Color::rgb(0.1, 0.1, 0.1).into()),
-            indicated: materials.add(Color::rgb(0.1, 0.1, 0.5).into()),
+            indicated: materials.add(Color::rgb(0.1, 0.1, 0.3).into()),
             pressed: materials.add(Color::rgb(0.5, 0.1, 0.1).into()),
         }
+    }
+}
+
+fn highlight(
+    button_materials: Res<Materials>,
+    mut interactions: Query<
+        (&Interaction, Mut<Handle<ColorMaterial>>),
+        (Mutated<Interaction>, With<Button>),
+    >,
+) {
+    for (interaction, mut material) in interactions.iter_mut() {
+        *material = match interaction {
+            Interaction::Clicked => button_materials.pressed.clone(),
+            Interaction::Hovered => button_materials.indicated.clone(),
+            Interaction::None => button_materials.normal.clone(),
+        };
     }
 }
