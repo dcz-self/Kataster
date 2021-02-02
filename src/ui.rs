@@ -7,7 +7,15 @@ use bevy::prelude::*;
 use bevy::prelude::{ ChildBuilder, Handle, Font };
 use bevy::ui::entity::{ ButtonBundle, ImageBundle, NodeBundle, TextBundle };
 
+
 pub struct DrawBlinkTimer(pub Timer);
+
+
+pub enum MenuAction {
+    EnterShootMode,
+    EnterAIMode,
+    Quit,
+}
 
 
 fn add_text_button<'a, 'b, 'c, 'd>(
@@ -15,6 +23,7 @@ fn add_text_button<'a, 'b, 'c, 'd>(
     button_materials: &'b Res<buttons::Materials>,
     font_handle: &'d Handle<Font>,
     text: String,
+    action: MenuAction,
 ) -> &'a mut ChildBuilder<'c> {
     commands
         .spawn(ButtonBundle {
@@ -39,8 +48,8 @@ fn add_text_button<'a, 'b, 'c, 'd>(
                 ..Default::default()
             });
         })
-        .with(ValidStates::from_func(|state| state == &GameState::MainMenu));
-    commands
+        .with(ValidStates::from_func(|state| state == &GameState::MainMenu))
+        .with(action)
 }
 
 pub fn start_menu(
@@ -80,8 +89,27 @@ pub fn start_menu(
                         ..Default::default()
                     })
                     .with(ValidStates::from_func(|state| state == &GameState::MainMenu));
-                add_text_button(parent, &button_materials, &font_handle, "1: Start shooting".into());
-                add_text_button(parent, &button_materials, &font_handle, "2: AI mode".into());
+                add_text_button(
+                    parent,
+                    &button_materials,
+                    &font_handle,
+                    "1: Start shooting".into(),
+                    MenuAction::EnterShootMode,
+                );
+                add_text_button(
+                    parent,
+                    &button_materials,
+                    &font_handle,
+                    "2: AI mode".into(),
+                    MenuAction::EnterAIMode,
+                );
+                add_text_button(
+                    parent,
+                    &button_materials,
+                    &font_handle,
+                    "Esc: Exit".into(),
+                    MenuAction::Quit,
+                );
             });
     }
 }
@@ -311,7 +339,32 @@ pub fn life_ui_system(
 }
 
 
-pub fn keyboard_menu_system(
+pub fn button_click(
+    mut runstate: ResMut<RunState>,
+    mut app_exit_events: ResMut<Events<AppExit>>,
+    mut interactions: Query<
+        (&Interaction, &MenuAction),
+        (Mutated<Interaction>, With<Button>),
+    >,
+) {
+    for (interaction, action) in interactions.iter_mut() {
+        match (interaction, action) {
+            (Interaction::Clicked, MenuAction::EnterShootMode) => {
+                runstate.gamestate.transit_to(GameState::Arena(Mode::Player));
+            },
+            (Interaction::Clicked, MenuAction::EnterAIMode) => {
+                runstate.gamestate.transit_to(GameState::Arena(Mode::AI));
+            },
+            (Interaction::Clicked, MenuAction::Quit) => {
+                app_exit_events.send(AppExit);
+            },
+            _ => {},
+        }
+    }
+}
+
+
+pub fn keyboard_menu(
     mut runstate: ResMut<RunState>,
     input: Res<Input<KeyCode>>,
     mut app_exit_events: ResMut<Events<AppExit>>,
